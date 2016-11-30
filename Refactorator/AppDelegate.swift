@@ -232,8 +232,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         return try! String(contentsOfFile: path, encoding:.utf8)
     }
 
-    var i = 0
-
     func setup( target: Entity? = nil, cascade: Bool = true ) {
         let code = sourceHTML()
         if project == nil {

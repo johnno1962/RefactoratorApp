@@ -12,8 +12,8 @@ binary.
 
 ![Icon](http://johnholdsworth.com/refactorator2.gif)
 
-This project is an experiment in "Beerware". I'd like to promote the idea that while it would be great if
-all software was Open Source that doesn't necessarily mean that it has to be free!
+This project is an experiment in "Beerware". I'd like to float the idea that while it would be neat if
+all software was Open Source that doesn't necessarily mean it has to be free!
 
 ## License
 
