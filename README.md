@@ -7,12 +7,12 @@ One of the features of app is it can convert a project into a standalone website
 example [this project](http://johnholdsworth.com/refactorator).
 
 To build, clone this and the code for the Refactorator plugin next to each other the build this project.
-Help is available (here)[http://johnholdsworth.com/refactorator.html] where you can download a pre-built
+Help is available [here](http://johnholdsworth.com/refactorator.html) where you can download a pre-built
 binary.
 
 ![Icon](http://johnholdsworth.com/refactorator2.gif)
 
-This project is an experiment in "Beerware". I'd like to forward the idea that it would be great if
+This project is an experiment in "Beerware". I'd like to promote the idea that while it would be great if
 all software was Open Source that doesn't necessarily mean that it has to be free!
 
 ## License
