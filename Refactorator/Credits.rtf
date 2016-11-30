@@ -1,0 +1,53 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 LucidaGrande;\f2\fnil\fcharset0 Menlo-Regular;
+\f3\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red83\green98\blue108;}
+\paperw11900\paperh16840\vieww9600\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\partightenfactor0
+
+\f0\fs24 \cf0 Refactorator is a user interface to an Xcode project's SQLite index database that allows you to rename identifiers that have a "Unified Symbol Reference" i.e. types, variables, ivars, functions & enum cases. For local variables use "Edit All in Scope". \
+\
+Whenever you launch Refactorator it communicates with Xcode through it's Apple Script API (see Xcode.h in the app bundle) to determine the current source file, topmost workspace and selection. It also uses this to locate the index database in "DerivedData".\
+\
+To rename the selected symbol, enter a new name into the text field in the middle of the display and click the "
+\b Apply
+\b0 " button or press enter. If the changes look OK, use the "
+\b Save
+\b0 " button to save them to disk then click the the "
+\b Check Build
+\b0 " button to make sure your project still builds.\
+\
+If the project no longer builds use the "
+\b Revert
+\b0 " button to undo all changes in the current session.\
+\
+Refactorator is designed to be used as a macOS service which is installed when you first run the application. To enable it go to "
+\b Keyboard/Shortcuts/Services
+\b0 " in the System Preferences app and enable the "Refactorator" and "Refactor File" services. After this you should be able to refactor from Xcode by selecting an identifier and typing 
+\f1 \uc0\u8984 
+\f0 -~ (cmd-tilde) or by using the right-click context menu under "Services" or direct from Finder.\
+\
+It can also be used as a source browser. Clicking on a symbol in top half of the screen will list the places it is used in the application while clicking on a symbol in the bottom half of the screen will load that source into the source viewer. 
+\f1 \uc0\u8984  
+\f0 clicking should take you to the definition. There are a couple of other features where you can search a project for specific text in a symbol USR or locate all symbols declared but not referenced in the code. \
+\
+Refactorator's ability to correctly find all occurrences of a symbol in a program is dependent on the quality of the index db which could be described as "generally complete" but it does sometimes get out of sync and you may have to manually fix errors at times. If you're having trouble, rebuild the project, test the project and then use the menu item "File/Force Re-index" to touch all Swift files in your project to force a complete re-index.\
+\
+If you're not keen how Refactorator looks, change the CSS styling in the file "Source.html" in the the app bundle. Feel free to send me an update!\
+\
+Refactorator has a "Beerware" license and can be used on the understanding that if you're finding it useful you'll consider shouting the developer a Beer ($5.00) and the application will give nag you gently after 10 runs or so to give it a thought. While it's not currently open sourced it is based on the code for the original plugin {\field{\*\fldinst{HYPERLINK "https://github.com/johnno1962/Refactorator"}}{\fldrslt https://github.com/johnno1962/Refactorator}} for the curious.\
+\
+For further help go to {\field{\*\fldinst{HYPERLINK "http://johnholdsworth.com/refactorator.html"}}{\fldrslt http://johnholdsworth.com/refactorator.html}}\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs22 \cf0 Copyright (C) 2016 John Holdsworth {\field{\*\fldinst{HYPERLINK "mailto:refactorator@johnholdsworth.com"}}{\fldrslt refactorator@johnholdsworth.com}} {\field{\*\fldinst{HYPERLINK "https://twitter.com/Injection4Xcode"}}{\fldrslt 
+\f3\fs24 \cf2 \expnd0\expndtw0\kerning0
+@Injection4Xcode}}\
+\
+Permission is hereby granted, subject to considering shouting the developer a Beer via paypal, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including the rights to use, copy, merge, publish, distribute, copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\
+\
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\
+\
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\
+}
