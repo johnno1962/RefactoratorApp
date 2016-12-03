@@ -71,27 +71,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         let defaults = UserDefaults.standard, countKey = "n"
         let count = max(0,defaults.integer(forKey: countKey))+1
         defaults.set(count, forKey: countKey)
-        defaults.synchronize()
-
-        if licensed {
-            return
-        }
-
-        let countdown = 10
-        if count > countdown {
-            let alert = NSAlert()
-            alert.messageText = "Refactorator"
-            alert.informativeText = "You've been using Refactorator a bit fom the look of things which has a \"Beerware\" license. How'd you like to shout John a Beer?"
-
-            alert.addButton(withTitle: "Sure thing!")
-            if count < countdown + 5 {
-                alert.addButton(withTitle: "Not just now")
-            }
-
-            if alert.runModal() == NSAlertFirstButtonReturn {
-                donate(sender: nil)
-            }
-        }
     }
 
     @IBAction func help(sender: NSMenuItem!) {
@@ -277,8 +256,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
             switch action {
             case #selector(back(sender:)):
                 return !history.isEmpty
-            case #selector(forward(sender:)):
-                return !future.isEmpty
             case #selector(forward(sender:)):
                 return !future.isEmpty
             case #selector(openWorkspace(sender:)):
