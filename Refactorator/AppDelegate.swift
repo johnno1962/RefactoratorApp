@@ -114,6 +114,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         window.makeKeyAndOrderFront(nil)
     }
 
+    @IBAction func syncToXcode(sender: NSMenuItem) {
+        setup()
+    }
+
     @IBAction func open(sender: NSMenuItem) {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false

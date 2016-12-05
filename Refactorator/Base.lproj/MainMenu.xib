@@ -97,9 +97,15 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
-                            <menuItem title="Open…" keyEquivalent="o" id="IAo-SY-fd9">
+                            <menuItem title="Sync to Xcode" id="IAo-SY-fd9">
+                                <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="openWithSender:" target="Voe-Tx-rLC" id="Chh-Vv-6nw"/>
+                                    <action selector="syncToXcodeWithSender:" target="Voe-Tx-rLC" id="pZd-Bk-QaN"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Open…" keyEquivalent="o" id="ss4-gS-ptz">
+                                <connections>
+                                    <action selector="openWithSender:" target="Voe-Tx-rLC" id="Ecz-sM-83p"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Open Recent" id="tXI-mr-wws">
