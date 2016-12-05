@@ -97,8 +97,7 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
-                            <menuItem title="Sync to Xcode" id="IAo-SY-fd9">
-                                <modifierMask key="keyEquivalentModifierMask"/>
+                            <menuItem title="Sync to Xcode" keyEquivalent="y" id="IAo-SY-fd9">
                                 <connections>
                                     <action selector="syncToXcodeWithSender:" target="Voe-Tx-rLC" id="pZd-Bk-QaN"/>
                                 </connections>
