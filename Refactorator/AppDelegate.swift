@@ -71,6 +71,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         let defaults = UserDefaults.standard, countKey = "n"
         let count = max(0,defaults.integer(forKey: countKey))+1
         defaults.set(count, forKey: countKey)
+
+        if count % 10 == 0 {
+            DispatchQueue.global().async {
+                func appVersion( from dict: [String: Any]? ) -> Double? {
+                    return dict == nil ? -1 : (dict?["CFBundleShortVersionString"] as AnyObject).doubleValue
+                }
+                let localVersion = appVersion(from: Bundle.main.infoDictionary)!
+                let url = "https://raw.githubusercontent.com/johnno1962/RefactoratorApp/master/Refactorator/Info.plist"
+                let currentVersion = appVersion(from: NSDictionary(contentsOf: URL(string: url)!) as? [String: Any])
+                if currentVersion != nil && currentVersion! > localVersion {
+                    DispatchQueue.main.async {
+                        let alert = NSAlert()
+                        alert.messageText = "Refactorator"
+                        alert.informativeText = "An update is available for Refactorator, please download a new copy"
+                        alert.runModal()
+                        self.help(sender: nil)
+                    }
+                }
+            }
+        }
     }
 
     @IBAction func help(sender: NSMenuItem!) {
