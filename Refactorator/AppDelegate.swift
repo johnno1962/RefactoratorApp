@@ -883,16 +883,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
                 sources += "<a href='\(htmlFile(path))'>\(relative(path))</a><br>"
             }
 
+            sources += "<p>Cross Reference can be found <a href='xref.html'>here</a>."
+
             let index = htmlDir+"index.html"
             try? sources.write(toFile: index, atomically: false, encoding: .utf8)
             NSWorkspace.shared().open(index.url)
+
+            sources = common+"</pre><div class=filelist><h2>Symbols defined in \(project?.workspaceName ?? "")</h2>"
+
+            for entity in declarationsByUSR.values.sorted(by: {demangle($0.0.usr)! < demangle($0.1.usr)!}) {
+                sources += "<a href='\(href(entity))'>\(demangle(entity.usr)!)</a><br>"
+            }
+
+            let xref = htmlDir+"xref.html"
+            try? sources.write(toFile: xref, atomically: false, encoding: .utf8)
         }
     }
 
 }
 
 func htmlEscape( _ str: String ) -> String {
-    return str.contains("&") || str.contains("&") ?
+    return str.contains("<") || str.contains("&") ?
         str.replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "<", with: "&lt;") : str
 }

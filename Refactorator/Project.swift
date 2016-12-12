@@ -106,7 +106,9 @@ class Project {
         if let xCode = xCode {
             var workspaceDocs = [String:SBObject]()
             for workspace in xCode.workspaceDocuments().map( { $0 as! SBObject } ) {
-                workspaceDocs[workspace.path] = workspace
+                if let path = workspace.path {
+                    workspaceDocs[path] = workspace
+                }
             }
 
             let windows = xCode.windows().sorted(by: {
