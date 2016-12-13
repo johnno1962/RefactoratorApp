@@ -9,37 +9,23 @@
 //
 
 import Cocoa
-import WebKit
 
 var xcode: AppDelegate!
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
-                WebUIDelegate, WebFrameLoadDelegate, WebPolicyDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @IBOutlet weak var window: NSWindow!
+
     @IBOutlet var findPanel: NSPanel!
-
-    @IBOutlet weak var sourceView: WebView!
-    @IBOutlet weak var changesView: WebView!
-    weak var printWebView: WebView!
-
-    @IBOutlet weak var replacement: NSTextField!
     @IBOutlet weak var findText: NSTextField!
 
     @IBOutlet weak var applyButton: NSButton!
     @IBOutlet weak var saveButton: NSButton!
     @IBOutlet weak var revertButton: NSButton!
 
-    @IBOutlet var backButton: NSMenuItem!
-    @IBOutlet var forwardButton: NSMenuItem!
-    @IBOutlet var reloadButton: NSMenuItem!
+    @IBOutlet var state: AppController!
 
-    var history = [Entity]()
-    var future = [Entity]()
-    var project: Project?
-
-    var html = "", oldValue = "", changes = ""
     var saved = false
 
     var licensed: Bool {
@@ -47,7 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     func log( _ msg: String ) {
-        appendSource(title: "", text: "<div class=log>\(msg)</div>")
+        state.appendSource(title: "", text: "<div class=log>\(msg)</div>")
         Swift.print( msg )
     }
 
@@ -61,11 +47,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         NSApp.servicesProvider = self
         NSUpdateDynamicServices()
 
-        history = NSDocumentController.shared().recentDocumentURLs.reversed().map { Entity( file: $0.path ) }
+        state.history = NSDocumentController.shared().recentDocumentURLs.reversed().map { Entity( file: $0.path ) }
 
         xcode = self
-        if project == nil {
-            setup()
+        if state.project == nil {
+            state.setup()
         }
 
         let defaults = UserDefaults.standard, countKey = "n"
@@ -102,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     @objc func application(_ theApplication: NSApplication, openFile filename: String ) -> Bool {
-        setup(target: Entity(file: filename))
+        state.setup(target: Entity(file: filename))
         return true
     }
 
@@ -110,13 +96,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         _ = pboard.string(forType: NSPasteboardTypeString)
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-        setup()
+        state.setup()
     }
 
     @objc func refactorFile(_ pboard: NSPasteboard, userData: String, error: NSErrorPointer) {
         let options = [NSPasteboardURLReadingFileURLsOnlyKey:true]
         if let fileURLs = pboard.readObjects(forClasses: [NSURL.self], options: options) {
-            setup(target: Entity(file: (fileURLs[0] as! NSURL).path!))
+            state.setup(target: Entity(file: (fileURLs[0] as! NSURL).path!))
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
         }
@@ -135,7 +121,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     @IBAction func syncToXcode(sender: NSMenuItem) {
-        setup()
+        state.setup()
     }
 
     @IBAction func open(sender: NSMenuItem) {
@@ -147,50 +133,50 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         panel.begin { (result) -> Void in
             if result == NSFileHandlingPanelOKButton,
                 let url = panel.url {
-                self.setup(target: Entity(file: url.path))
+                self.state.setup(target: Entity(file: url.path))
             }
         }
     }
 
     @IBAction func openInXcode(sender: NSMenuItem) {
-        if let current = history.last {
+        if let current = state.history.last {
             NSWorkspace.shared().open(current.file.url)
         }
     }
 
     @IBAction func openWorkspace(sender: NSMenuItem) {
-        if let workspace = project?.workspacePath {
+        if let workspace = state.project?.workspacePath {
             NSWorkspace.shared().open(workspace.url)
         }
     }
 
     @IBAction func back(sender: NSMenuItem) {
-        if !history.isEmpty {
-            future.append( history.removeLast() )
-            let save = future
-            if !history.isEmpty {
-                let previous = history.removeLast()
-                setup(target: previous, cascade: false)
+        if !state.history.isEmpty {
+            state.future.append( state.history.removeLast() )
+            let save = state.future
+            if !state.history.isEmpty {
+                let previous = state.history.removeLast()
+                state.setup(target: previous, cascade: false)
             }
             else {
                 let recentSources = NSDocumentController.shared().recentDocumentURLs
                 if recentSources.count > 1 {
-                    setup(target: Entity(file: recentSources[1].path))
+                    state.setup(target: Entity(file: recentSources[1].path))
                 }
             }
-            future = save
+            state.future = save
         }
     }
 
     @IBAction func forward(sender: NSMenuItem) {
-        if !future.isEmpty {
-            setup(target: future.removeLast())
+        if !state.future.isEmpty {
+            state.setup(target: state.future.removeLast())
         }
     }
 
     @IBAction func reload(sender: NSMenuItem) {
-        if let current = history.last {
-            setup(target: Entity(file: current.file))
+        if let current = state.history.last {
+            state.setup(target: Entity(file: current.file))
         }
     }
     
@@ -201,7 +187,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         pi.rightMargin = 25
         pi.bottomMargin = 50
         pi.isHorizontallyCentered = false
-        NSPrintOperation(view:printWebView.mainFrame.frameView.documentView, printInfo:pi).run()
+        NSPrintOperation(view: state.printWebView.mainFrame.frameView.documentView, printInfo: pi).run()
     }
 
     @IBAction func zapDerivedData(sender: NSMenuItem) {
@@ -212,90 +198,40 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         alert.addButton(withTitle: "Cancel")
         alert.addButton(withTitle: "I know what I'm doing")
         if alert.runModal() == NSAlertSecondButtonReturn {
-            _system("/bin/rm -rf \"\(dir)\"")
+            let task = Process()
+            task.launchPath = "/bin/rm"
+            task.arguments = ["-rf", dir]
+            task.launch()
+            task.waitUntilExit()
         }
     }
 
     @IBAction func undoChanges(sender: AnyObject) {
-        modified.removeAll()
-        changes = ""
-    }
-
-    func defaultEntity() -> Entity {
-        if let recentSource = NSDocumentController.shared().recentDocumentURLs.first {
-            let entity = Entity(file: recentSource.path)
-            project = Project(target: entity)
-            return entity
-        }
-        return Entity(file: Bundle.main.path(forResource: "Intro", ofType: "html")!)
-    }
-
-    func sourceHTML() -> String {
-        let path = Bundle.main.path(forResource: "Source", ofType: "html")!
-        return try! String(contentsOfFile: path, encoding:.utf8)
-    }
-
-    func setup( target: Entity? = nil, cascade: Bool = true ) {
-        let code = sourceHTML()
-        if project == nil {
-            changesView.uiDelegate = self
-            changesView.mainFrame.loadHTMLString(code+"<div>Click on a symbol to locate references to rename</div>", baseURL: nil)
-            changesView.policyDelegate = self
-        }
-
-        isTTY = false
-        project = Project(target: target)
-        let target = target ?? project?.entity ?? defaultEntity()
-
-        printWebView = sourceView
-        setLocation(entity: target)
-        future.removeAll()
-
-        if let sourceData = NSData(contentsOfFile: target.file) {
-            if target.sourceName == "Intro.html" {
-                html = String(data:sourceData as Data, encoding:.utf8)!
-            }
-            else {
-                let entities = project?.indexDB?.entitiesFor(filePath: target.file)
-                html = htmlFor(path: target.file, data: sourceData, entities: entities,
-                               selecting: target, cascade: cascade, fullpath: false).joined()
-            }
-
-            if sourceView.uiDelegate == nil {
-                sourceView.uiDelegate = self
-                sourceView.frameLoadDelegate = self
-                sourceView.mainFrame.loadHTMLString(code, baseURL: nil)
-            }
-            else {
-                sourceView.windowScriptObject.callWebScriptMethod("setSource", withArguments: [html])
-            }
-        }
-        else {
-            xcode.error("Could not open \(target.file)")
-        }
+        state.modified.removeAll()
+        state.changes = ""
     }
 
     @objc override func validateMenuItem(_ aMenuItem: NSMenuItem) -> Bool {
         if let action = aMenuItem.action {
             switch action {
             case #selector(back(sender:)):
-                return !history.isEmpty
+                return !state.history.isEmpty
             case #selector(forward(sender:)):
-                return !future.isEmpty
+                return !state.future.isEmpty
             case #selector(openWorkspace(sender:)):
-                return project?.workspacePath != Project.unknown
+                return state.project?.workspacePath != Project.unknown
             case #selector(undoChanges(sender:)):
                 fallthrough
             case #selector(saveChanges(sender:)):
-                return !modified.isEmpty
+                return !state.modified.isEmpty
             case #selector(revertSession(sender:)):
-                return !originals.isEmpty && saved
+                return !state.originals.isEmpty && saved
             case #selector(buildProject(sender:)):
-                return project?.workspaceDoc != nil
+                return state.project?.workspaceDoc != nil
             case #selector(indexRebuild(sender:)):
-                return project?.projectRoot != Project.unknown
+                return state.project?.projectRoot != Project.unknown
             case #selector(buildSite(sender:)):
-                return project?.indexDB != nil
+                return state.project?.indexDB != nil
             default:
                 break
             }
@@ -303,404 +239,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         return true
     }
 
-    func setLocation( entity: Entity ) {
-        if entity != history.last || entity.offset != history.last?.offset {
-            history.append( entity )
-        }
-        if entity.sourceName == "Intro.html" {
-            return
-        }
-
-        let sourceURL = entity.file.url
-        NSDocumentController.shared().noteNewRecentDocumentURL(sourceURL)
-        let sourceDir = sourceURL.deletingLastPathComponent().path
-        if var workspace = project?.workspaceName {
-            if !IndexDB.projectIncludes(file: entity.file) {
-                workspace = "Incorrect frontmost open workspace \(workspace)"
-            }
-            window.title = "\(sourceURL.lastPathComponent) – \(sourceDir.replacingOccurrences(of: HOME, with: "~")) – \(workspace)"
-        }
-    }
-
-    let newline = CChar("\n".utf16.last!)
-
-    func htmlFor( path: String, data: NSData, entities: [Entity]? = nil, skew: Int = 0, selecting: Entity? = nil, cascade: Bool = true, shortform: Bool = false, fullpath: Bool = true,
-                  linker: @escaping (_ text: String, _ entity: Entity?) -> String = {
-            (_ text: String, _ entity: Entity?) -> String in
-            return text
-        } ) -> [String] {
-
-        var ptr = 0, skewtotal = 0, line = 1, col = 1, entityNumber = 0, html = ""
-        let sourceBytes = data.bytes.assumingMemoryBound(to: CChar.self)
-
-        func skipTo( offset: Int ) -> (text: String, entity: Entity?) {
-            if offset <= ptr {
-                return ("", nil)
-            }
-
-            let selectedByOffset = ptr == selecting?.offset
-            var offset = offset + skewtotal
-            var currentEntity: Entity?
-
-            if let entities = entities, entityNumber < entities.count {
-                var entity = entities[entityNumber]
-                while (entity.line < line || entity.line == line && entity.col < col) && entityNumber + 1 < entities.count {
-//                    xcode.log("Missed entity \(entity.line):\(entity.col) < \(line):\(col) \(entity.usr) - \(path)")
-                    entityNumber += 1
-                    entity = entities[entityNumber]
-                }
-                if entity.line == line && entity.col == col || entity.offset == ptr+skewtotal {
-//                    xcode.log("entity \(entity.line):\(entity.col) == \(line):\(col) \(entity.usr) - \(path)")
-                    currentEntity = entity
-                    entityNumber += 1
-                    if !entity.notMatch {
-                        offset += skew
-                    }
-                }
-            }
-
-            let out = NSString( bytes: sourceBytes+ptr+skewtotal,
-                                length: offset-(ptr+skewtotal),
-                                encoding: String.Encoding.utf8.rawValue ) ??
-                        NSString( bytes: sourceBytes+ptr+skewtotal,
-                                  length: offset-(ptr+skewtotal),
-                                  encoding: String.Encoding.isoLatin1.rawValue ) ??
-                        "?\(ptr+skewtotal)?\(offset-(ptr+skewtotal))?" as NSString
-
-            while ptr+skewtotal < offset {
-                if sourceBytes[ptr+skewtotal] == newline {
-                    line += 1
-                    col = 1
-                }
-                else {
-                    col += 1
-                }
-                ptr += 1
-            }
-
-            if currentEntity?.notMatch == false {
-                skewtotal += skew
-                ptr -= skew
-            }
-//            ptr = offset-skews
-
-            var escaped = htmlEscape( out as String )
-            if currentEntity?.decl == true {
-                escaped = "<span class=declaration>\(escaped)</span>"
-            }
-            if selectedByOffset || currentEntity != nil && (currentEntity == selecting || selecting == nil) {
-                escaped = "<span class=highlighted id=selected cascade=\(cascade ? 1 : 0)>\(escaped)</span>"
-            }
-
-            return (escaped, currentEntity)
-        }
-
-
-        let sourceKit = Project.sourceKit
-        let cleanPath = fullpath ? path : relative( path )
-        let resp = project?.maps[path] ?? sourceKit.syntaxMap(filePath: path)
-        project?.maps[path] = resp
-
-        var extensions = [String:String]()
-
-        let dict = sourcekitd_response_get_value( resp )
-        let map = sourcekitd_variant_dictionary_get_value( dict, sourceKit.syntaxID )
-        sourcekitd_variant_array_apply( map ) { (_,dict) in
-            let kind = dict.getUUIDString( key: sourceKit.kindID )
-            let offset = dict.getInt( key: sourceKit.offsetID )
-            let length = dict.getInt( key: sourceKit.lengthID )
-            let kindSuffix = extensions[kind] ?? kind.url.pathExtension
-            if extensions[kind] == nil {
-                extensions[kind] = kindSuffix
-            }
-
-            html += skipTo( offset: offset ).text
-
-            var span = "<span"
-            if !shortform {
-                span += " line=\(line) col=\(col) offset=\(ptr) title=\"\(cleanPath)#\(line):\(col)"
-            }
-
-            var (text, entity) = skipTo( offset: offset+length )
-            let type = entity != nil ? "Xc\(entity!.kindSuffix) " : ""
-            let usr = entity?.usr != nil ? htmlEscape( demangle( entity!.usr! )! ) : ""
-
-            if !shortform {
-                span += " \(usr) \(entity?.kind ?? "")\""
-            }
-
-            span += " class='\(type)\(kindSuffix)' entity=\(entity != nil || entities == nil ? 1 : 0)>"
-
-            if kindSuffix == "url" {
-                text = "<a href=\"\(text)\">\(text)</a>"
-            }
-            html += "\(span)\(linker(text, entity))</span>"
-
-            return true
-        }
-        
-        html += skipTo( offset: data.length-skewtotal ).0
-
-        var lineNumber = 0
-        let lines = html.components(separatedBy: "\n").map {
-            (line) -> String in
-            lineNumber += 1
-            return String(format:"<span class=linenumber>%04d&nbsp;</span>", lineNumber)+line+"\n"
-        }
-
-        return lines
-    }
-
-    func relative( _ path: String ) -> String {
-        return project != nil ? path
-            .replacingOccurrences(of: project!.projectRoot+"/", with: "")
-            .replacingOccurrences(of: HOME+"/", with: "") : path
-    }
-
-    @objc func webView( _ webView: WebView, addMessageToConsole message: NSDictionary ) {
-        Swift.print("\(message)")
-    }
-
-    @objc func webView(_ sender: WebView!, runJavaScriptAlertPanelWithMessage message: String!, initiatedBy frame: WebFrame!) {
-        print("\(message)")
-    }
-
-    @objc func webView(_ sender: WebView!, didFinishLoadFor frame: WebFrame!) {
-        if sender == sourceView {
-            sourceView.policyDelegate = self
-            let win = sourceView.windowScriptObject!
-            win.setValue(self, forKey:"appDelegate")
-            win.callWebScriptMethod("setSource", withArguments: [html])
-        }
-    }
-
-    @objc func webView(_ webView: WebView!, decidePolicyForNavigationAction actionInformation: [AnyHashable : Any]!,
-                        request: URLRequest!, frame: WebFrame!, decisionListener listener: WebPolicyDecisionListener!) {
-        if request.url!.scheme != "about" {
-            NSWorkspace.shared().open(request.url!)
-            listener.ignore()
-        }
-        else {
-            listener.use()
-        }
-    }
-
-    @objc func webView(_ sender: WebView!, contextMenuItemsForElement element: [AnyHashable : Any]!, defaultMenuItems: [Any]!) -> [Any]! {
-        return [backButton, forwardButton, reloadButton]
-    }
-
-    var entitiesByFile = [[Entity]]()
-    var originals = [String:NSData]()
-    var modified = [String:NSData]()
-    var linecounts = [String:Int]()
-
-    @discardableResult
-    func setChangesSource( header: String? = nil, target: Entity? = nil, isApply: Bool = false ) -> WebScriptObject {
-        if !isApply {
-            project = Project(target: target ?? history.last)
-        }
-        let win = changesView.windowScriptObject!
-        win.callWebScriptMethod("setSource", withArguments: [header != nil ? "<div class=changesHeader>\(header!)</div>" : ""])
-        if project?.indexDB == nil {
-            xcode.error("No index DB found for project: \(project?.workspacePath ?? "unavailable")")
-        }
-        return win
-    }
-
-    func appendSource( title: String, text: String ) {
-        changesView.windowScriptObject.callWebScriptMethod("appendSource", withArguments: [title, text])
-    }
-    
-    @objc override class func isSelectorExcluded( fromWebScript aSelector: Selector ) -> Bool {
-        return aSelector != #selector(selected(text:title:line:col:offset:metaKey:)) &&
-            aSelector != #selector(changeSelected(text:title:line:col:offset:metaKey:))
-    }
-
-    @objc public func selected( text: String, title: String, line: Int, col: Int, offset: Int, metaKey: Bool ) {
-        let entity = Entity(file: history.last?.file ?? title.components(separatedBy: "#")[0],
-                            line: line, col: col, offset: offset)
-
-        setChangesSource(target: entity).setValue(self, forKey:"appDelegate2")
-        replacement.stringValue = text
-        printWebView = sourceView
-        entitiesByFile.removeAll()
-        oldValue = text
-
-        if project?.indexDB == nil {
-            xcode.error("Unable to open index db. Best guess at path was:\n\(project!.indexPath)")
-            return
-        }
-
-        let sourcePath = entity.file
-        if !IndexDB.projectIncludes(file: sourcePath) {
-            xcode.error("File does not seem to be in the project. Is the wrong project open in the frontmost window of Xcode?\n\n")
-        }
-
-        if let indexDB = project?.indexDB {
-            if let usr = indexDB.usrInFile(filePath: sourcePath, line: line, col: col) {
-
-                if metaKey, let entity = indexDB.declarationFor(filePath: sourcePath, line: line, col: col) {
-                    setup(target: entity, cascade: false)
-                    return
-                }
-
-                setLocation(entity: entity)
-
-                appendSource(title: project!.indexPath, text: "<div class=usr>USR: <span title=\"\(usr)\">\(htmlEscape( demangle( usr )! ))</span></div>")
-
-                var system = false
-                var pathSeen = [String:Int]()
-                _ = indexDB.entitiesFor(filePath: sourcePath, line: line, col: col) {
-                    (entities) in
-
-                    let path = entities[0].file
-                    if let seen = pathSeen[path] {
-                        xcode.log("Already seen \(path) \(seen) times")
-                        pathSeen[path] = seen + 1
-                    }
-                    else {
-                        pathSeen[path] = 1
-                    }
-
-                    if path.contains("/Developer/Platforms/") ||
-                        path.contains("/Developer/Toolchains/" ) {
-                        system = true
-                        return
-                    }
-
-                    entitiesByFile.append( entities )
-                }
-
-//                entitiesByFile.sort(by: { $0.0.filter { $0.decl }.count != 0 })
-                processEntities(type: "references")
-                if system {
-                    appendSource(title: "", text: "\nToolchain symbol")
-                }
-            }
-            else {
-                xcode.log("<span title=\"\(project?.indexPath ?? "")\">No USR associated with \(entity.sourceName)#\(line):\(col) in project: \(project!.workspaceName). Is indexing complete?</span>")
-                _system("touch \"\(entity.file)\"")
-            }
-        }
-        else {
-            xcode.error("Could load load index db for project \(project?.workspacePath ?? "unknown")")
-        }
-    }
-
-    @objc public func changeSelected( text: String, title: String, line: Int, col: Int, offset: Int, metaKey: Bool ) {
-        let sourcePath = title.components(separatedBy: "#")[0]
-        printWebView = changesView
-        if  !metaKey {
-            setup(target: Entity(file: sourcePath, line: line, col: col, offset: offset), cascade: false)
-        }
-        else if let indexDB = project?.indexDB,
-            let entity = indexDB.declarationFor(filePath: sourcePath, line: line, col: col) {
-            setup(target: entity, cascade: false)
-        }
-    }
-
-    func filtered( _ lines: [String], _ entities: [Entity] ) -> String {
-        var path = entities[0].file, filename = relative( path )
-        filename = filename.substring(from: filename.range(of: "SDKs")?.lowerBound ?? filename.startIndex)
-        let body = entities.map { lines[$0.line-1] }.joined()
-        return "<a class=sourceLink href=\"file:\(path)\">\(filename)</a>\n<div class='changesEntry'>\(body)</div>"
-    }
-
-    var wasSearch = false
-
     @IBAction func applySubstitution(sender: NSButton) {
-        let newValue = replacement.stringValue
+
+        let newValue = state.replacement.stringValue
         if newValue == myColor && !licensed {
-            setChangesSource(header: "<div class=licensed>You are now licensed. Thanks!</div><br><img src='data:image/png;base64,\(fireworks)'>", isApply: true)
+            state.setChangesSource(header: "<div class=licensed>You are now licensed. Thanks!</div><br><img src='data:image/png;base64,\(fireworks)'>", isApply: true)
             UserDefaults.standard.set(newValue, forKey: colorKey)
             UserDefaults.standard.synchronize()
             return
         }
 
-        if oldValue == "" {
-            setChangesSource(header: "Please select an entity before applying replacement", isApply: true)
+        if state.oldValue == "" {
+            state.setChangesSource(header: "Please select an entity before applying replacement", isApply: true)
             return
         }
 
-        let newData = newValue.data(using: .utf8)!
-        let skew = newData.count - oldValue.utf8.count
-        setChangesSource(header: "Applying replacement of '\(oldValue)' with '\(newValue)'", isApply: true)
+        state.applySubstitution(oldValue: state.oldValue, newValue: newValue)
+        state.oldValue = newValue
 
-        var modifications = 0
-        for entities in entitiesByFile.sorted( by: { $0[0].file < $1[0].file } ) {
-            let path = entities[0].file
-            if let contents = modified[path] ?? NSData(contentsOfFile: path) {
-                if originals[path] == nil {
-                    originals[path] = contents
-                }
-
-                let out = NSMutableData()
-                var pos = 0, mods = 0
-                for entity in entities {
-                    if let matches = entity.regex(text: oldValue).match(input: contents), Int(matches[2].rm_so) >= pos {
-                        let startOffset = Int(matches[2].rm_so)
-                        out.append( contents.subdata( with: NSMakeRange(pos, startOffset-pos) ) )
-
-                        if let entity = history.last, path == entity.file && startOffset == entity.offset {
-                            entity.offset = out.length
-                        }
-                        entity.offset = out.length
-
-                        out.append( newData )
-                        pos = Int(matches[2].rm_eo)
-                        modifications += 1
-                        mods += 1
-                    }
-                    else if wasSearch {
-                        entity.notMatch = true
-                    }
-                    else {
-                        xcode.log("Could not match \(newValue) at \(path)#\(entity.line):\(entity.col)")
-                    }
-                }
-
-                out.append( contents.subdata( with: NSMakeRange(pos, contents.length-pos) ) )
-                modified[path] = out
-
-                let lines = htmlFor(path: path, data: out, entities: entities, skew: skew)
-                appendSource(title: path, text: filtered(lines, entities))
-                if lines.count != linecounts[path] {
-                    xcode.log("Mismatched linecount \(lines.count) != \(linecounts[path]) for \(path)")
-                }
-            }
-        }
-
-        changes += "<div id=applying>Changing <span class=oldValue>'\(oldValue)'</span> to <span class=newValue>'\(newValue)'</span>...<div>"
-        appendSource(title: "", text: "\(modifications) modifications proposed")
-        revertButton.isEnabled = !originals.isEmpty
-        saveButton.isEnabled = !modified.isEmpty
-        oldValue = newValue
-    }
-
-    func processEntities(type: String) {
-        var changes = 0, files = 0
-
-        for entities in entitiesByFile.sorted( by: { $0[0].file < $1[0].file } ) {
-            let path = entities[0].file
-            if let sourceData = NSData(contentsOfFile: path) {
-                let lines = htmlFor(path: path, data: sourceData, entities: entities)
-                appendSource(title: path, text: filtered(lines, entities))
-                linecounts[path] = lines.count
-
-                changes += entities.count
-                files += 1
-            }
-            else {
-                xcode.log("Could not read \(path)")
-            }
-        }
-
-        appendSource(title: "", text: "\(changes) \(type) in \(files) file"+(files==1 ? "" : "s"))
+        revertButton.isEnabled = !state.originals.isEmpty
+        saveButton.isEnabled = !state.modified.isEmpty
     }
 
     @IBAction func openFind(sender: NSMenuItem) {
         if findText.stringValue == "" {
-            findText.stringValue = replacement.stringValue
+            findText.stringValue = state.replacement.stringValue
         }
         findPanel.makeKeyAndOrderFront(nil)
     }
@@ -711,69 +274,41 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         case 1:
             fallthrough
         case 2:
-            sourceView.search( for: string, direction:true, caseSensitive:false, wrap:true)
+            state.sourceView.search( for: string, direction:true, caseSensitive:false, wrap:true)
         case 3:
-            sourceView.search( for: string, direction:false, caseSensitive:false, wrap:true)
+            state.sourceView.search( for: string, direction:false, caseSensitive:false, wrap:true)
         default:
             break
         }
     }
 
     @IBAction func searchProject(sender: AnyObject) {
-        let pattern = sender is NSMenuItem ? replacement.stringValue : findText.stringValue
-        setChangesSource(header: "USR search for pattern: \(pattern)")
-        guard let indexDB = project?.indexDB else {
-            xcode.error("Could load load index db \(project!.indexPath)")
-            return
-        }
-
-        replacement.stringValue = pattern
-        oldValue = pattern
-        wasSearch = true
-
-        entitiesByFile = indexDB.entitiesFor(pattern: pattern)
-        processEntities(type: sender is AppDelegate ? "errors" : "references")
+        state.searchProject(sender: sender)
+        state.processEntities(type: sender is AppDelegate ? "errors" : "references")
     }
     
     @IBAction func findOrphans(sender: NSMenuItem) {
-        setChangesSource(header: "Symbols declared but not referred to...")
-        guard let indexDB = project?.indexDB else {
-            xcode.error("Could load load index db \(project!.indexPath)")
+        state.setChangesSource(header: "Symbols declared but not referred to...")
+        guard let indexDB = state.project?.indexDB else {
+            xcode.error("Could load load index db \(state.project!.indexPath)")
             return
         }
 
-        entitiesByFile = indexDB.orphans()
-        processEntities(type: "orphans")
+        state.entitiesByFile = indexDB.orphans()
+        state.processEntities(type: "orphans")
     }
     
-    func writeChanges( dict: [String:NSData], header: String ) {
-        setChangesSource(header: header, isApply: true)
-        for (path, data) in dict {
-            let wrote = data.write(toFile: path, atomically: true)
-            appendSource(title: path, text: "\(wrote ? "Wrote" : "Could not write to") \(path)\n")
-        }
-
-        let indexUpdateTime = 5.0
-        appendSource(title: "", text: "\nRefreshing in \(indexUpdateTime) seconds\n")
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + indexUpdateTime) {
-            self.setup(target: self.history.last ?? self.defaultEntity())
-        }
-
-        modified.removeAll()
-        changes = ""
-    }
-
     @IBAction func saveChanges(sender: AnyObject) {
-        writeChanges(dict: modified, header: changes)
+        state.writeChanges(dict: state.modified, header: state.changes)
         saved = true
     }
 
     @IBAction func buildProject(sender: AnyObject) {
-        _ = project?.workspaceDoc?.build()
+        _ = state.project?.workspaceDoc?.build()
     }
 
     @IBAction func revertSession(sender: AnyObject) {
-        writeChanges(dict: originals, header: "Reverting changes...\n")
+        state.writeChanges(dict: state.originals, header: "Reverting changes...\n")
         undoChanges(sender: self)
     }
 
@@ -783,13 +318,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     @IBAction func indexRebuild(sender: NSMenuItem) {
-        _system("find \"\(project!.projectRoot)\" -name '*.swift' -exec touch {} \\;")
+        let task = Process()
+        task.launchPath = "/usr/bin/find"
+        task.arguments = [state.project!.projectRoot, "-name", "*.swift", "-exec", "touch", "{}", ";"]
+        task.launch()
+        task.waitUntilExit()
     }
 
     @IBAction func exportHTML(sender: NSMenuItem) {
-        let out = sourceView.windowScriptObject.evaluateWebScript("document.head.outerHTML + document.body.outerHTML") as! String
+        let out = state.sourceView.windowScriptObject.evaluateWebScript("document.head.outerHTML + document.body.outerHTML") as! String
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = history.last!.file.url.deletingPathExtension().lastPathComponent+".html"
+        panel.nameFieldStringValue = state.history.last!.file.url.deletingPathExtension().lastPathComponent+".html"
         panel.begin { (result) -> Void in
             if result == NSFileHandlingPanelOKButton,
                 let url = panel.url {
@@ -799,133 +338,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     }
 
     @IBAction func buildSite(sender: AnyObject) {
-        guard let projectRoot = project?.projectRoot else { return }
+        guard let projectRoot = state.project?.projectRoot else { return }
         let htmlDir = projectRoot+"/html/"
-        setChangesSource(header: "Building source site into \(htmlDir)")
-        try? FileManager.default.createDirectory(atPath: htmlDir, withIntermediateDirectories: false, attributes: nil)
-        if var entiesForFiles = project?.indexDB?.projectEntities() {
-            var referencesByUSR = [Int:[Entity]]()
-            var declarationsByUSR = [Int:Entity]()
-
-            var dataByFile = [String:NSData]()
-            var linesByFile = [String:[String]]()
-
-            for entities in entiesForFiles {
-                for entity in entities {
-                    if let usrID = entity.usrID {
-                        if referencesByUSR[usrID] == nil {
-                            referencesByUSR[usrID] = [Entity]()
-                        }
-                        referencesByUSR[usrID]!.append(entity)
-                        if entity.decl {
-                            declarationsByUSR[usrID] = entity
-                        }
-                    }
-                }
-                let path = entities[0].file
-
-                dataByFile[path] = NSData(contentsOfFile: path)
-                linesByFile[path] = htmlFor(path: path, data: dataByFile[path]!, entities: entities, shortform: true, fullpath: false )
-            }
-
-            for (usrID, _) in referencesByUSR {
-                referencesByUSR[usrID]!.sort { $0.0 < $0.1 }
-            }
-
-            func htmlFile( _ path: String ) -> String {
-                return relative( path ).replacingOccurrences(of: "/", with: "_") + ".html"
-            }
-
-            func href( _ entity: Entity ) -> String {
-                return "\(htmlFile(entity.file))#L\(entity.line)"
-            }
-
-            let common = sourceHTML()
-
-            let siteThreads = 4, threadPool = DispatchGroup()
-
-            for threadNumber in 0..<siteThreads {
-                threadPool.enter()
-                DispatchQueue.global().async {
-                    for fileNumber in stride(from: threadNumber,
-                                        through: entiesForFiles.count-1, by: siteThreads) {
-                        let entities = entiesForFiles[fileNumber]
-                        let path = entities[0].file
-                        let out = common + self.htmlFor(path: path, data: dataByFile[path]!, entities: entities, selecting: Entity(file:""), fullpath: false ) {
-                            (text, entity) -> String in
-                            var text = text
-                            if let entity = entity,
-                                let decl = declarationsByUSR[entity.usrID!],
-                                let related = referencesByUSR[entity.usrID!] {
-                                if related.count > 1 {
-                                    if entity.decl || self.project?.indexDB?.podDirIDs[entity.dirID] == nil {
-                                        var popup = ""
-                                        for ref in related {
-                                            if ref == entity {
-                                                continue
-                                            }
-                                            let keepListOpen = ref.file != decl.file ? "event.stopPropagation(); " : ""
-                                            popup += "<tr\(ref == decl ? " class=decl" : "")><td style='text-decoration: underline;' " +
-                                            "onclick='document.location.href=\"\(href(ref))\"; \(keepListOpen)return false;'>\(ref.file.url.lastPathComponent)</td>"
-                                            popup += "<td><pre>\(linesByFile[ref.file]![ref.line-1].replacingOccurrences(of: "\n", with: ""))</pre></td>"
-                                        }
-                                        text = "<a style='color: inherit' name='L\(entity.line)' href='\(href(decl))' target=_self onclick='return expand(this, event.metaKey);'>" +
-                                        "\(text)<span class='references'><table>\(popup)</table></span></a>"
-                                    }
-                                    else {
-                                        text = "<a style='color: inherit' href='\(href(decl))'>\(text)</a>"
-                                    }
-                                }
-                                else if entity.decl == true {
-                                    text = "<a style='color: inherit' name='L\(entity.line)' no_href='\(href(decl))'>\(text)</a>"
-                                }
-                            }
-                            return text
-                            }.joined()
-
-                        let final = htmlDir.url.appendingPathComponent(htmlFile(path))
-                        try? out.write(to: final, atomically: false, encoding: .utf8)
-                        DispatchQueue.main.async {
-                            self.appendSource(title: "", text: "Wrote <a href=\"file://\(final.path)\">\(final.path)</a>\n")
-                        }
-                    }
-
-                    threadPool.leave()
-                }
-            }
-
-            threadPool.wait()
-
-            var sources = common+"</pre><div class=filelist><h2>Sources for Project \(project?.workspaceName ?? "")</h2>"
-
-            for entities in entiesForFiles.sorted(by: { $0.0[0].file < $0.1[0].file }) {
-                let path =  entities[0].file
-                sources += "<a href='\(htmlFile(path))'>\(relative(path))</a><br>"
-            }
-
-            sources += "<p>Cross Reference can be found <a href='xref.html'>here</a>."
-
-            let index = htmlDir+"index.html"
-            try? sources.write(toFile: index, atomically: false, encoding: .utf8)
-            NSWorkspace.shared().open(index.url)
-
-            sources = common+"</pre><div class=filelist><h2>Symbols defined in \(project?.workspaceName ?? "")</h2>"
-
-            for entity in declarationsByUSR.values.sorted(by: {demangle($0.0.usr)! < demangle($0.1.usr)!}) {
-                sources += "<a href='\(href(entity))'>\(demangle(entity.usr)!)</a><br>"
-            }
-
-            let xref = htmlDir+"xref.html"
-            try? sources.write(toFile: xref, atomically: false, encoding: .utf8)
-        }
+        state.formatter.buildSite( for: state.project!, into: htmlDir, state: state)
     }
-
-}
-
-func htmlEscape( _ str: String ) -> String {
-    return str.contains("<") || str.contains("&") ?
-        str.replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;") : str
 }
 
 private let myIndex = {

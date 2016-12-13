@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11761" systemVersion="15G1108" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="15G1108" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11761"/>
-        <plugIn identifier="com.apple.WebKitIBPlugin" version="11761"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
+        <plugIn identifier="com.apple.WebKitIBPlugin" version="11762"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -17,17 +17,12 @@
         <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Refactorator" customModuleProvider="target">
             <connections>
                 <outlet property="applyButton" destination="Izx-PW-zhY" id="iBw-bi-MwO"/>
-                <outlet property="backButton" destination="OxX-fx-Pdn" id="wEl-yt-Tkx"/>
-                <outlet property="changesView" destination="Kfe-Ht-0tr" id="vAA-M1-K3K"/>
                 <outlet property="findPanel" destination="A2I-eS-piB" id="f2N-7f-Gh0"/>
-                <outlet property="findText" destination="cpj-R8-vCt" id="Gl3-nq-kvq"/>
-                <outlet property="forwardButton" destination="rZ9-vB-ZMx" id="AZj-Tr-Tcp"/>
-                <outlet property="reloadButton" destination="zJ0-Jr-CmZ" id="k2s-6h-EGt"/>
-                <outlet property="replacement" destination="hvb-Q7-aD4" id="Kht-le-vE0"/>
+                <outlet property="findText" destination="cpj-R8-vCt" id="rCd-e6-2rU"/>
                 <outlet property="revertButton" destination="IcZ-6U-OZY" id="pfI-XV-kvK"/>
                 <outlet property="saveButton" destination="atp-pA-4jR" id="0qy-Ju-HXL"/>
-                <outlet property="sourceView" destination="hoP-PD-VYj" id="td6-p2-5Oc"/>
-                <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
+                <outlet property="state" destination="nF1-TD-e5Y" id="dAj-Je-v3j"/>
+                <outlet property="window" destination="QvC-M9-y7g" id="jIt-wF-TW8"/>
             </connections>
         </customObject>
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
@@ -416,7 +411,7 @@
                             <menuItem title="Project Search" keyEquivalent="g" toolTip="grep through project Symbols using a regex" id="gbP-jh-pGT">
                                 <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
-                                    <action selector="searchProjectWithSender:" target="Voe-Tx-rLC" id="gt5-OZ-cWP"/>
+                                    <action selector="openFindWithSender:" target="Voe-Tx-rLC" id="k7k-IT-vf2"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Find Orphans" toolTip="Search for symbols declared but not referred to in code" id="jEQ-l8-b1a">
@@ -960,5 +955,17 @@
                 <action selector="forwardWithSender:" target="Voe-Tx-rLC" id="DUY-3P-KZX"/>
             </connections>
         </menuItem>
+        <customObject id="nF1-TD-e5Y" customClass="AppController" customModule="Refactorator" customModuleProvider="target">
+            <connections>
+                <outlet property="backButton" destination="OxX-fx-Pdn" id="HJm-QX-dt9"/>
+                <outlet property="changesView" destination="Kfe-Ht-0tr" id="Pci-C5-kAq"/>
+                <outlet property="findText" destination="cpj-R8-vCt" id="aFk-nw-QAW"/>
+                <outlet property="forwardButton" destination="rZ9-vB-ZMx" id="chL-Be-W5j"/>
+                <outlet property="reloadButton" destination="zJ0-Jr-CmZ" id="mbo-kn-4gg"/>
+                <outlet property="replacement" destination="hvb-Q7-aD4" id="2cv-HW-epU"/>
+                <outlet property="sourceView" destination="hoP-PD-VYj" id="aCi-kN-Hfe"/>
+                <outlet property="window" destination="QvC-M9-y7g" id="lsx-29-EL8"/>
+            </connections>
+        </customObject>
     </objects>
 </document>

@@ -8,8 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-extern int _system( const char *cmd );
-
 @interface Utils : NSObject
 + (NSString *)hashStringForPath:(NSString *)path;
 @end

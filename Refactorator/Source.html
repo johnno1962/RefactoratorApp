@@ -140,7 +140,7 @@ function searchSelected( span, meta, cascade, click ) {
 
     if ( span ) {
 
-        if ( window.appDelegate && (span.getAttribute("entity") != 0 || cascade) ) {
+        if ( window.appController && (span.getAttribute("entity") != 0 || cascade) ) {
             getSelection().setBaseAndExtent(span, 0, span, 1)
 
             if ( boldened )
@@ -150,13 +150,13 @@ function searchSelected( span, meta, cascade, click ) {
                 boldened.style.fontWeight = "bold"
 
             if ( span.getAttribute("entity") != 0 )
-                appDelegate.selectedWithText_title_line_col_offset_metaKey_( span.innerText, span.title,
+                appController.selectedWithText_title_line_col_offset_metaKey_( span.innerText, span.title,
                     span.getAttribute("line"), span.getAttribute("col"), span.getAttribute("offset"), meta )
         }
 
-        if ( window.appDelegate2 && click ) {
+        if ( window.appController2 && click ) {
             getSelection().setBaseAndExtent(span, 0, span, 1)
-            appDelegate2.changeSelectedWithText_title_line_col_offset_metaKey_( span.innerText, span.title,
+            appController2.changeSelectedWithText_title_line_col_offset_metaKey_( span.innerText, span.title,
                 span.getAttribute("line"), span.getAttribute("col"), span.getAttribute("offset"), meta )
         }
     }

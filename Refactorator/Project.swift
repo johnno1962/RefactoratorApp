@@ -35,8 +35,6 @@ class Project {
 
     var entity: Entity?
 
-    var maps = [String:sourcekitd_response_t]()
-
     var workspaceName: String {
         return workspacePath.url.lastPathComponent
     }
@@ -186,21 +184,6 @@ class Project {
                 (project.workspacePath, project.projectRoot, project.derivedData, project.indexPath, IndexDB(dbPath: project.indexPath))
         }
         Project.lastProject = self
-
-//        else if entity == nil {
-//            xcode.error( "No appropriate source file open in Xcode under project: \(workspacePath)" )
-//        }
-
-//        if indexDB == nil {
-////            xcode.error("Could not open an indexDB for \(workspacePath)")
-//            return nil
-//        }
-    }
-
-    deinit {
-        for (_, resp) in maps {
-            sourcekitd_request_release(resp)
-        }
     }
 
 }

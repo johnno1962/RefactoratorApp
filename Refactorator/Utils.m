@@ -10,10 +10,6 @@
 
 #import <CommonCrypto/CommonCrypto.h>
 
-int _system( const char *cmd ) {
-    return system( cmd );
-}
-
 @implementation Utils
 
 // Thanks to: http://samdmarshall.com/blog/xcode_deriveddata_hashes.html
