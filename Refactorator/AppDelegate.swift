@@ -198,11 +198,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         alert.addButton(withTitle: "Cancel")
         alert.addButton(withTitle: "I know what I'm doing")
         if alert.runModal() == NSAlertSecondButtonReturn {
-            let task = Process()
-            task.launchPath = "/bin/rm"
-            task.arguments = ["-rf", dir]
-            task.launch()
-            task.waitUntilExit()
+            Process.run(path: "/bin/rm", args: ["-rf", dir])
         }
     }
 
@@ -318,11 +314,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @IBAction func indexRebuild(sender: NSMenuItem) {
-        let task = Process()
-        task.launchPath = "/usr/bin/find"
-        task.arguments = [state.project!.projectRoot, "-name", "*.swift", "-exec", "touch", "{}", ";"]
-        task.launch()
-        task.waitUntilExit()
+        Process.run(path: "/usr/bin/find", args: [state.project!.projectRoot,
+                                                  "-name", "*.swift", "-exec", "touch", "{}", ";"])
     }
 
     @IBAction func exportHTML(sender: NSMenuItem) {
@@ -339,8 +332,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @IBAction func buildSite(sender: AnyObject) {
         guard let projectRoot = state.project?.projectRoot else { return }
-        let htmlDir = projectRoot+"/html/"
-        state.formatter.buildSite( for: state.project!, into: htmlDir, state: state)
+        state.formatter.buildSite( for: state.project!, into: projectRoot+"/html/", state: state)
     }
 }
 

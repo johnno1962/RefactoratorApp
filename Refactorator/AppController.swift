@@ -9,6 +9,18 @@
 import Foundation
 import WebKit
 
+extension Process {
+
+    class func run(path: String, args: [String]) {
+        let task = Process()
+        task.launchPath = path
+        task.arguments = args
+        task.launch()
+        task.waitUntilExit()
+    }
+
+}
+
 class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDelegate {
 
     @IBOutlet weak var window: NSWindow!
@@ -36,7 +48,7 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
     var modified = [String:NSData]()
     var linecounts = [String:Int]()
 
-    let formatter = Formatter()
+    var formatter = Formatter()
 
     func sourceHTML() -> String {
         let path = Bundle.main.path(forResource: "Source", ofType: "html")!
@@ -233,11 +245,7 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
             }
             else {
                 xcode.log("<span title=\"\(project?.indexPath ?? "")\">No USR associated with \(entity.sourceName)#\(line):\(col) in project: \(project!.workspaceName). Is indexing complete?</span>")
-                let task = Process()
-                task.launchPath = "/usr/bin/touch"
-                task.arguments = [entity.file]
-                task.launch()
-                task.waitUntilExit()
+                Process.run(path: "/usr/bin/touch", args: [entity.file])
             }
         }
         else {
@@ -351,10 +359,7 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
             self.setup(target: self.history.last ?? self.defaultEntity())
         }
 
-        for (_, resp) in formatter.maps {
-            sourcekitd_request_release(resp)
-        }
-        formatter.maps.removeAll()
+        formatter = Formatter()
         modified.removeAll()
         changes = ""
     }

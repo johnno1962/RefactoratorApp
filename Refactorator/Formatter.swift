@@ -269,4 +269,10 @@ class Formatter {
         }
     }
 
+    deinit {
+        for (_, resp) in maps {
+            sourcekitd_request_release(resp)
+        }
+    }
+
 }
