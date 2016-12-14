@@ -16,7 +16,11 @@ func htmlEscape( _ str: String ) -> String {
 
 class Formatter {
 
+    static let sourceKit = SourceKit()
+
     var maps = [String:sourcekitd_response_t]()
+    var mtimes = [String:TimeInterval]()
+
     let newline = CChar("\n".utf16.last!)
 
     func htmlFor( path: String, data: NSData, entities: [Entity]? = nil, skew: Int = 0, selecting: Entity? = nil, cascade: Bool = true, shortform: Bool = false, cleanPath: String? = nil,
@@ -90,10 +94,13 @@ class Formatter {
             return (escaped, currentEntity)
         }
 
+        isTTY = false
 
-        let sourceKit = Project.sourceKit
+        let sourceKit = Formatter.sourceKit
         let cleanPath = cleanPath ?? path
-        let resp = maps[path] ?? sourceKit.syntaxMap(filePath: path)
+        let modified = mtime( path )
+        let resp = (modified == mtimes[path] ? maps[path] : nil) ?? sourceKit.syntaxMap(filePath: path)
+        mtimes[path] = modified
         maps[path] = resp
 
         var extensions = [String:String]()
@@ -121,7 +128,7 @@ class Formatter {
             let usr = entity?.usr != nil ? htmlEscape( demangle( entity!.usr! )! ) : ""
 
             if !shortform {
-                span += " \(usr) \(entity?.kind ?? "")\""
+                span += " \(usr) \(entity?.kind ?? "") \(entity?.role ?? -1)\""
             }
 
             span += " class='\(type)\(kindSuffix)' entity=\(entity != nil || entities == nil ? 1 : 0)>"
@@ -232,9 +239,14 @@ class Formatter {
                             }.joined()
 
                         let final = htmlDir.url.appendingPathComponent(htmlFile(path))
-                        try? out.write(to: final, atomically: false, encoding: .utf8)
-                        DispatchQueue.main.async {
-                            state.appendSource(title: "", text: "Wrote <a href=\"file://\(final.path)\">\(final.path)</a>\n")
+                        do {
+                            try out.write(to: final, atomically: false, encoding: .utf8)
+                            DispatchQueue.main.async {
+                                state.appendSource(title: "", text: "Wrote <a href=\"file://\(final.path)\">\(final.path)</a>\n")
+                            }
+                        }
+                        catch (let e) {
+                            print("Could not save to \(final): \(e)")
                         }
                     }
 
@@ -256,7 +268,7 @@ class Formatter {
             
             let index = htmlDir+"index.html"
             try? sources.write(toFile: index, atomically: false, encoding: .utf8)
-            NSWorkspace.shared().open(index.url)
+            state.open(url: index)
             
             sources = common+"</pre><div class=filelist><h2>Symbols defined in \(workspace)</h2><script> document.title = 'Symbols defined in \(workspace)' </script>"
             

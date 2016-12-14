@@ -10,8 +10,6 @@
 
 import Cocoa
 
-var xcode: AppDelegate!
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
@@ -32,16 +30,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return UserDefaults.standard.string(forKey: colorKey) == myColor
     }
 
-    func log( _ msg: String ) {
-        state.appendSource(title: "", text: "<div class=log>\(msg)</div>")
-        Swift.print( msg )
-    }
-
-    func error( _ msg: String ) {
-        window.title = msg
-        log( "<div class=error>\(msg)</div>" )
-    }
-
     @objc func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
         NSApp.servicesProvider = self
@@ -49,7 +37,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         state.history = NSDocumentController.shared().recentDocumentURLs.reversed().map { Entity( file: $0.path ) }
 
-        xcode = self
+        xcode = state
         if state.project == nil {
             state.setup()
         }
@@ -80,11 +68,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @IBAction func help(sender: NSMenuItem!) {
-        NSWorkspace.shared().open(URL(string:"http://johnholdsworth.com/refactorator.html?index=\(myIndex)")!)
+        state.open(url: "http://johnholdsworth.com/refactorator.html?index=\(myIndex)")
     }
 
     @IBAction func donate(sender: NSMenuItem!) {
-        NSWorkspace.shared().open(URL(string:"http://johnholdsworth.com/cgi-bin/refactorator.cgi?index=\(myIndex)")!)
+        state.open(url: "http://johnholdsworth.com/cgi-bin/refactorator.cgi?index=\(myIndex)")
     }
 
     @objc func application(_ theApplication: NSApplication, openFile filename: String ) -> Bool {
@@ -140,13 +128,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @IBAction func openInXcode(sender: NSMenuItem) {
         if let current = state.history.last {
-            NSWorkspace.shared().open(current.file.url)
+            state.open(url: current.file)
         }
     }
 
     @IBAction func openWorkspace(sender: NSMenuItem) {
         if let workspace = state.project?.workspacePath {
-            NSWorkspace.shared().open(workspace.url)
+            state.open(url: workspace)
         }
     }
 
@@ -313,6 +301,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         searchProject(sender: self)
     }
 
+    @IBAction func searchSelection(sender: NSMenuItem) {
+        findText.stringValue = state.oldValue
+        searchProject(sender: self)
+    }
+
     @IBAction func indexRebuild(sender: NSMenuItem) {
         Process.run(path: "/usr/bin/find", args: [state.project!.projectRoot,
                                                   "-name", "*.swift", "-exec", "touch", "{}", ";"])
@@ -334,6 +327,46 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let projectRoot = state.project?.projectRoot else { return }
         state.formatter.buildSite( for: state.project!, into: projectRoot+"/html/", state: state)
     }
+
+
+    @IBAction func findDependencies(sender: AnyObject) {
+        var DOT_PATH = "/usr/local/bin/dot"
+        if !FileManager.default.fileExists(atPath: DOT_PATH) {
+            let alert = NSAlert()
+            alert.messageText = "Refactorator"
+            alert.informativeText = "Object Graphs dependencies in your application " +
+                "can be displayed if you install \"dot\" from http://www.graphviz.org/."
+            alert.runModal()
+            state.open(url: "http://www.graphviz.org/Download_macos.php")
+
+            return
+        }
+
+        var nodeID = 0, nodes = [String:Int]()
+        var dot = "digraph xref {\n    node [fontname=\"Arial\"];\n"
+        func defineNode( _ path: String ) -> String {
+            if nodes[path] == nil {
+                nodeID += 1
+                nodes[path] = nodeID
+                dot += "N\(nodeID) [href=\"javascript:void(click_node('\(path)'))\" label=\"\(path.url.deletingPathExtension().lastPathComponent)\" tooltip=\"\(path)\"];\n"
+            }
+            return "N\(nodes[path]!)"
+        }
+
+        for (to, from, count) in state.project!.indexDB!.dependencies() {
+            dot += "    \(defineNode( from )) -> \(defineNode( to )) [penwidth=\(log10(Double(count)))]\n"
+        }
+
+        dot += "}\n"
+
+        let dotfile = "/tmp/refactorator.dot"
+        try? dot.write(toFile: dotfile, atomically: false, encoding: .utf8)
+        Process.run(path: DOT_PATH, args: [dotfile, "-Txdot", "-o"+state.gvfile])
+
+        state.canvizView = nil
+        state.setup(target: state.canvizEntity)
+    }
+
 }
 
 private let myIndex = {

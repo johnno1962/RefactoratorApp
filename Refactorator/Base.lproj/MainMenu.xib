@@ -165,6 +165,12 @@
                                     <action selector="indexRebuildWithSender:" target="Voe-Tx-rLC" id="wZt-mp-h0F"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Dependencies" toolTip="Find dependencies bewteen source files (requires Graphviz)" id="AK8-sM-fgc">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="findDependenciesWithSender:" target="Voe-Tx-rLC" id="nQo-Tc-GRe"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Export HTML" toolTip="Extract olourised HTML for source" id="xV4-lN-mus">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -955,14 +961,21 @@
                 <action selector="forwardWithSender:" target="Voe-Tx-rLC" id="DUY-3P-KZX"/>
             </connections>
         </menuItem>
+        <menuItem title="Search USRs" toolTip="Search project for USRs matching selection" id="kWr-TP-7Pz">
+            <modifierMask key="keyEquivalentModifierMask"/>
+            <connections>
+                <action selector="searchSelectionWithSender:" target="Voe-Tx-rLC" id="ZFB-Uh-Dt1"/>
+            </connections>
+        </menuItem>
         <customObject id="nF1-TD-e5Y" customClass="AppController" customModule="Refactorator" customModuleProvider="target">
             <connections>
-                <outlet property="backButton" destination="OxX-fx-Pdn" id="HJm-QX-dt9"/>
+                <outlet property="backItem" destination="OxX-fx-Pdn" id="gr2-kX-680"/>
                 <outlet property="changesView" destination="Kfe-Ht-0tr" id="Pci-C5-kAq"/>
                 <outlet property="findText" destination="cpj-R8-vCt" id="aFk-nw-QAW"/>
-                <outlet property="forwardButton" destination="rZ9-vB-ZMx" id="chL-Be-W5j"/>
-                <outlet property="reloadButton" destination="zJ0-Jr-CmZ" id="mbo-kn-4gg"/>
+                <outlet property="forwardItem" destination="rZ9-vB-ZMx" id="HsK-1X-VsG"/>
+                <outlet property="reloadItem" destination="zJ0-Jr-CmZ" id="8Gs-yO-6CK"/>
                 <outlet property="replacement" destination="hvb-Q7-aD4" id="2cv-HW-epU"/>
+                <outlet property="searchItem" destination="kWr-TP-7Pz" id="4c1-Zd-Slh"/>
                 <outlet property="sourceView" destination="hoP-PD-VYj" id="aCi-kN-Hfe"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="lsx-29-EL8"/>
             </connections>

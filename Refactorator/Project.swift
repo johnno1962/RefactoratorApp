@@ -18,13 +18,12 @@ extension Entity {
 
 }
 
-class Project {
+struct Project {
 
-    static let sourceKit = SourceKit()
     static var lastProject: Project?
     static var unknown = "unknown"
 
-    let xCode: SBApplication?
+    var xCode: SBApplication?
     var workspaceDoc: SBObject?
 
     var workspacePath = unknown
@@ -179,9 +178,7 @@ class Project {
         }
 
         if indexDB == nil && Project.lastProject?.indexDB != nil {
-            let project = Project.lastProject!
-            (workspacePath, projectRoot, derivedData, indexPath, indexDB) =
-                (project.workspacePath, project.projectRoot, project.derivedData, project.indexPath, IndexDB(dbPath: project.indexPath))
+            self = Project.lastProject!
         }
         Project.lastProject = self
     }

@@ -9,14 +9,18 @@
 import Foundation
 import WebKit
 
+var xcode: AppController!
+
 extension Process {
 
-    class func run(path: String, args: [String]) {
+    @discardableResult
+    class func run(path: String, args: [String]) -> Int32 {
         let task = Process()
         task.launchPath = path
         task.arguments = args
         task.launch()
         task.waitUntilExit()
+        return task.terminationStatus
     }
 
 }
@@ -29,12 +33,16 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
     @IBOutlet weak var changesView: WebView!
     weak var printWebView: WebView!
 
+    let canvizEntity = Entity(file: "/CANVIZ/")
+    var canvizView: WebView!
+
     @IBOutlet weak var replacement: NSTextField!
     @IBOutlet weak var findText: NSTextField!
 
-    @IBOutlet var backButton: NSMenuItem!
-    @IBOutlet var forwardButton: NSMenuItem!
-    @IBOutlet var reloadButton: NSMenuItem!
+    @IBOutlet var backItem: NSMenuItem!
+    @IBOutlet var forwardItem: NSMenuItem!
+    @IBOutlet var reloadItem: NSMenuItem!
+    @IBOutlet var searchItem: NSMenuItem!
 
     var history = [Entity]()
     var future = [Entity]()
@@ -50,6 +58,20 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
 
     var formatter = Formatter()
 
+    func log( _ msg: String ) {
+        appendSource(title: "", text: "<div class=log>\(msg)</div>")
+        Swift.print( msg )
+    }
+
+    func error( _ msg: String ) {
+        window.title = msg
+        log( "<div class=error>\(msg)</div>" )
+    }
+
+    func open( url: String ) {
+        NSWorkspace.shared().open(url.url)
+    }
+    
     func sourceHTML() -> String {
         let path = Bundle.main.path(forResource: "Source", ofType: "html")!
         return try! String(contentsOfFile: path, encoding:.utf8)
@@ -72,8 +94,27 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
             changesView.policyDelegate = self
         }
 
-        isTTY = false
-        project = Project(target: target)
+        if target != canvizEntity {
+            project = Project(target: target)
+            canvizView?.removeFromSuperview()
+        }
+        else {
+            if canvizView == nil {
+                canvizView = WebView(frame: sourceView.frame)
+                canvizView.autoresizingMask = sourceView.autoresizingMask
+                canvizView.frameLoadDelegate = self
+                canvizView.uiDelegate = self
+                let path = Bundle.main.path(forResource: "canviz", ofType: "html")!
+                canvizView.mainFrame.load( URLRequest( url: path.url ) )
+            }
+            else {
+                canvizView.frame = sourceView.frame
+            }
+            sourceView.superview?.addSubview(canvizView)
+            history.append( canvizEntity )
+            return
+        }
+
         let target = target ?? project?.entity ?? defaultEntity()
 
         printWebView = sourceView
@@ -138,6 +179,9 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
             win.setValue(self, forKey:"appController")
             win.callWebScriptMethod("setSource", withArguments: [html])
         }
+        else if sender == canvizView {
+            canvizView.windowScriptObject.setValue(self, forKey:"appController")
+        }
     }
 
     @objc func webView(_ webView: WebView!, decidePolicyForNavigationAction actionInformation: [AnyHashable : Any]!,
@@ -152,19 +196,20 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
     }
 
     @objc func webView(_ sender: WebView!, contextMenuItemsForElement element: [AnyHashable : Any]!, defaultMenuItems: [Any]!) -> [Any]! {
-        return [backButton, forwardButton, reloadButton]
+        return [backItem, forwardItem, reloadItem, searchItem]
     }
     
     @discardableResult
     func setChangesSource( header: String? = nil, target: Entity? = nil, isApply: Bool = false ) -> WebScriptObject {
-        if !isApply {
-            project = Project(target: target ?? history.last)
+        if !isApply, let last = history.last, last != canvizEntity {
+            project = Project(target: target ?? last)
         }
         let win = changesView.windowScriptObject!
         win.callWebScriptMethod("setSource", withArguments: [header != nil ? "<div class=changesHeader>\(header!)</div>" : ""])
         if project?.indexDB == nil {
             xcode.error("No index DB found for project: \(project?.workspacePath ?? "unavailable")")
         }
+        win.setValue(self, forKey:"appController2")
         return win
     }
 
@@ -180,14 +225,15 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
 
     @objc override class func isSelectorExcluded( fromWebScript aSelector: Selector ) -> Bool {
         return aSelector != #selector(selected(text:title:line:col:offset:metaKey:)) &&
-            aSelector != #selector(changeSelected(text:title:line:col:offset:metaKey:))
+            aSelector != #selector(changeSelected(text:title:line:col:offset:metaKey:)) &&
+            aSelector != #selector(depends(path:)) && aSelector != #selector(graphvizExport)
     }
     
     @objc public func selected( text: String, title: String, line: Int, col: Int, offset: Int, metaKey: Bool ) {
         let entity = Entity(file: history.last?.file ?? title.components(separatedBy: "#")[0],
                             line: line, col: col, offset: offset)
 
-        setChangesSource(target: entity).setValue(self, forKey:"appController2")
+        setChangesSource(target: entity)
         replacement.stringValue = text
         printWebView = sourceView
         entitiesByFile.removeAll()
@@ -291,6 +337,22 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
         }
 
         appendSource(title: "", text: "\(changes) \(type) in \(files) file"+(files==1 ? "" : "s"))
+    }
+
+    @objc func depends( path: String ) {
+        setChangesSource(header: "Dependencies on \(relative(path))")
+        if let indexDB = project?.indexDB {
+            entitiesByFile = indexDB.dependsOn(path: path)
+        }
+        processEntities(type: "dependencies")
+    }
+
+    var gvfile: String {
+        return "/tmp/refactorator.gv"
+    }
+
+    @objc func graphvizExport() {
+        open(url: gvfile)
     }
 
     func applySubstitution(oldValue: String, newValue: String) {

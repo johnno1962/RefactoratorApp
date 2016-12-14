@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+ This file is part of Canviz. See http://www.canviz.org/
+ $Id: new.html.in 256 2009-01-08 11:14:07Z ryandesign.com $
+ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta name="MSSmartTagsPreventParsing" content="true" />
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" type="text/css" href="canviz-0.1/canviz.css" />
+        <title>Project Dependencies</title>
+        <script type="text/javascript" src="canviz-0.1/prototype/prototype.js"></script>
+        <script type="text/javascript" src="canviz-0.1/path/path.js"></script>
+        <script type="text/javascript" src="canviz-0.1/canviz.js"></script>
+        <script>
+            var canviz;
+            document.observe('dom:loaded', function() {
+                 canviz = new Canviz('canviz', '/tmp/refactorator.gv?flush='+Math.random());
+            });
+            function click_node(node) {
+                appController.dependsWithPath_( node )
+                return false
+            }
+            function set_graph_scale(select) {
+                canviz.setScale(select.value);
+                canviz.draw();
+                window.scrollTo(0,0);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="menus" style="position: relative;">
+            &nbsp;Image Scale:
+
+            <select name="graph_scale" id="graph_scale" onchange="set_graph_scale(this)">
+                <option value="1" selected>100%</option>
+                <option value="0.75">75%</option>
+                <option value="0.5">50%</option>
+                <option value="0.35">35%</option>
+                <option value="0.25">25%</option>
+                <option value="0.15">15%</option>
+                <option value="0.1">10%</option>
+                <option value="0.05">5%</option>
+            </select>
+
+            <button onclick="appController.graphvizExport()">Export to Graphviz</button>
+
+            Click on file name to list references
+        </div>
+
+        <div class="graph">
+            <div id="canviz"></div>
+        </div>
+        <div id="debug_output" style="display:none"></div>
+    </body>
+</html>

@@ -12,6 +12,8 @@ binary](http://johnholdsworth.com/Refactorator.app.zip).
 
 ![Icon](http://johnholdsworth.com/refactorator2.gif)
 
+The project now draws interactive dependecncy graphs between sources in a project if you have Graphviz installed.
+
 This project is an experiment in "Beerware" there is a "donate" button on the Help Menu ;)
 
 ## MIT Licensed
@@ -31,3 +33,6 @@ LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE A
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+This release includes the canviz, path amd prototype JavaScript libraries which are distributed under the terms of their respective licenses.
+
