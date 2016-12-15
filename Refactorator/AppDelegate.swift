@@ -334,7 +334,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if !FileManager.default.fileExists(atPath: DOT_PATH) {
             let alert = NSAlert()
             alert.messageText = "Refactorator"
-            alert.informativeText = "Object Graphs dependencies in your application " +
+            alert.informativeText = "Dependencies in your application " +
                 "can be displayed if you install \"dot\" from http://www.graphviz.org/."
             alert.runModal()
             state.open(url: "http://www.graphviz.org/Download_macos.php")
