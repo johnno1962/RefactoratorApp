@@ -139,7 +139,7 @@ struct Project {
             let relevantDoc = xCode.sourceDocuments().filter {
                 let sourceDoc = $0 as! SBObject
                 return IndexDB.projectIncludes(file: sourceDoc.path) && sourceDoc.selectedCharacterRange != nil
-            }.last
+            }.first
 
             if let sourceDoc = relevantDoc as? SBObject {
                 let sourcePath = sourceDoc.path.url.resolvingSymlinksInPath().path

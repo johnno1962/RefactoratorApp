@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import WebKit
 
 func htmlEscape( _ str: String ) -> String {
     return str.contains("<") || str.contains("&") ?
@@ -14,13 +15,37 @@ func htmlEscape( _ str: String ) -> String {
             .replacingOccurrences(of: "<", with: "&lt;") : str
 }
 
+extension Process {
+
+    @discardableResult
+    class func run(path: String, args: [String]) -> Int32 {
+        let task = Process()
+        task.launchPath = path
+        task.arguments = args
+        task.launch()
+        task.waitUntilExit()
+        return task.terminationStatus
+    }
+
+}
+
+protocol AppGui: AppLogging {
+
+    var project: Project? { get }
+    func sourceHTML() -> String
+    @discardableResult
+    func setChangesSource( header: String?, target: Entity?, isApply: Bool ) -> WebScriptObject
+    func appendSource( title: String, text: String )
+    func relative( _ path: String ) -> String
+    func open( url: String )
+
+}
+
 class Formatter {
 
     static let sourceKit = SourceKit()
 
-    var maps = [String:sourcekitd_response_t]()
-    var mtimes = [String:TimeInterval]()
-
+    var maps = [String:(mtime: TimeInterval, resp: sourcekitd_response_t)]()
     let newline = CChar("\n".utf16.last!)
 
     func htmlFor( path: String, data: NSData, entities: [Entity]? = nil, skew: Int = 0, selecting: Entity? = nil, cascade: Bool = true, shortform: Bool = false, cleanPath: String? = nil,
@@ -99,9 +124,8 @@ class Formatter {
         let sourceKit = Formatter.sourceKit
         let cleanPath = cleanPath ?? path
         let modified = mtime( path )
-        let resp = (modified == mtimes[path] ? maps[path] : nil) ?? sourceKit.syntaxMap(filePath: path)
-        mtimes[path] = modified
-        maps[path] = resp
+        let resp = (modified == maps[path]?.mtime ? maps[path]?.resp : nil) ?? sourceKit.syntaxMap(filePath: path)
+        maps[path] = (modified,resp)
 
         var extensions = [String:String]()
 
@@ -152,9 +176,13 @@ class Formatter {
         
         return lines
     }
-    
-    func buildSite( for project: Project, into htmlDir: String, state: AppController ) {
-        state.setChangesSource(header: "Building source site into \(htmlDir)")
+
+    func htmlFile(_ state: AppGui, _ path: String ) -> String {
+        return state.relative( path ).replacingOccurrences(of: "/", with: "_") + ".html"
+    }
+
+    func buildSite( for project: Project, into htmlDir: String, state: AppGui ) {
+        state.setChangesSource(header: "Building source site into \(htmlDir)", target: nil, isApply: false )
         try? FileManager.default.createDirectory(atPath: htmlDir, withIntermediateDirectories: false, attributes: nil)
         if var entiesForFiles = project.indexDB?.projectEntities() {
             var referencesByUSR = [Int:[Entity]]()
@@ -185,12 +213,8 @@ class Formatter {
                 referencesByUSR[usrID]!.sort { $0.0 < $0.1 }
             }
 
-            func htmlFile( _ path: String ) -> String {
-                return state.relative( path ).replacingOccurrences(of: "/", with: "_") + ".html"
-            }
-
             func href( _ entity: Entity ) -> String {
-                return "\(htmlFile(entity.file))#L\(entity.line)"
+                return "\(htmlFile(state, entity.file))#L\(entity.line)"
             }
 
             let common = state.sourceHTML()
@@ -238,7 +262,7 @@ class Formatter {
                             return text
                             }.joined()
 
-                        let final = htmlDir.url.appendingPathComponent(htmlFile(path))
+                        let final = htmlDir.url.appendingPathComponent(self.htmlFile(state, path))
                         do {
                             try out.write(to: final, atomically: false, encoding: .utf8)
                             DispatchQueue.main.async {
@@ -256,34 +280,83 @@ class Formatter {
 
             threadPool.wait()
 
-            let workspace = state.project?.workspaceName ?? "unknown"
-            var sources = common+"</pre><div class=filelist><h2>Sources for Project \(workspace)</h2><script> document.title = 'Sources for Project \(workspace)' </script>"
-            
-            for entities in entiesForFiles.sorted(by: { $0.0[0].file < $0.1[0].file }) {
-                let path =  entities[0].file
-                sources += "<a href='\(htmlFile(path))'>\(state.relative(path))</a><br>"
+            do {
+                let workspace = state.project?.workspaceName ?? "unknown"
+                var sources = common+"</pre><div class=filelist><h2>Sources for Project \(workspace)</h2><script> document.title = 'Sources for Project \(workspace)' </script>"
+                
+                for entities in entiesForFiles.sorted(by: { $0.0[0].file < $0.1[0].file }) {
+                    let path =  entities[0].file
+                    sources += "<a href='\(htmlFile(state, path))'>\(state.relative(path))</a><br>"
+                }
+                
+                sources += "<p>Cross Reference can be found <a href='xref.html'>here</a>."
+                sources += "<p>Dependencies Graph can be found <a href='canviz.html'>here</a>."
+                let index = htmlDir+"index.html"
+                try sources.write(toFile: index, atomically: false, encoding: .utf8)
+
+                state.open(url: index)
+                
+                sources = common+"</pre><div class=filelist><h2>Symbols defined in \(workspace)</h2><script> document.title = 'Symbols defined in \(workspace)' </script>"
+                
+                for entity in declarationsByUSR.values.sorted(by: {demangle($0.0.usr)! < demangle($0.1.usr)!}) {
+                    sources += "<a href='\(href(entity))'>\(demangle(entity.usr)!)</a><br>"
+                }
+                
+                let xref = htmlDir+"xref.html"
+                try sources.write(toFile: xref, atomically: false, encoding: .utf8)
+
+                runDepends(state: state)
+
+                let dotFile = htmlDir+"refactorator.gv"
+                try? FileManager.default.removeItem(atPath: dotFile)
+                try FileManager.default.copyItem(atPath: gvfile, toPath: dotFile)
+
+                let canviz = Bundle.main.path(forResource: "canviz-0.1", ofType: nil)!
+                try? FileManager.default.copyItem(atPath: canviz, toPath: htmlDir+"canviz-0.1")
+
+                let canviz2 = Bundle.main.path(forResource: "canviz2", ofType: "html")!
+                try? FileManager.default.removeItem(atPath: htmlDir+"canviz.html")
+                try FileManager.default.copyItem(atPath: canviz2, toPath: htmlDir+"canviz.html")
             }
-            
-            sources += "<p>Cross Reference can be found <a href='xref.html'>here</a>."
-            
-            let index = htmlDir+"index.html"
-            try? sources.write(toFile: index, atomically: false, encoding: .utf8)
-            state.open(url: index)
-            
-            sources = common+"</pre><div class=filelist><h2>Symbols defined in \(workspace)</h2><script> document.title = 'Symbols defined in \(workspace)' </script>"
-            
-            for entity in declarationsByUSR.values.sorted(by: {demangle($0.0.usr)! < demangle($0.1.usr)!}) {
-                sources += "<a href='\(href(entity))'>\(demangle(entity.usr)!)</a><br>"
+            catch (let e) {
+                state.error( "Error building site: \(e)")
             }
-            
-            let xref = htmlDir+"xref.html"
-            try? sources.write(toFile: xref, atomically: false, encoding: .utf8)
         }
     }
 
+    var DOT_PATH = "/usr/local/bin/dot"
+    var gvfile: String {
+        return "/tmp/refactorator.gv"
+    }
+
+    func runDepends( state: AppGui ) {
+        var nodeID = 0, nodes = [String:Int]()
+        var dot = "digraph xref {\n    node [fontname=\"Arial\"];\n"
+        func defineNode( _ path: String ) -> String {
+            if nodes[path] == nil {
+                nodeID += 1
+                nodes[path] = nodeID
+                dot += "N\(nodeID) [href=\"javascript:void(click_node('\(path)', '\(htmlFile(state, path))'))\" " +
+                    "label=\"\(path.url.deletingPathExtension().lastPathComponent)\" tooltip=\"\(path)\"];\n"
+            }
+            return "N\(nodes[path]!)"
+        }
+
+        for (to, from, count) in state.project!.indexDB!.dependencies() {
+            dot += "    \(defineNode( from )) -> \(defineNode( to )) [penwidth=\(log10(Double(count)))]\n"
+        }
+
+        dot += "}\n"
+
+        let dotfile = "/tmp/refactorator.dot"
+        try? dot.write(toFile: dotfile, atomically: false, encoding: .utf8)
+
+        Process.run(path: DOT_PATH, args: [dotfile, "-Txdot", "-o"+gvfile])
+    }
+
     deinit {
-        for (_, resp) in maps {
-            sourcekitd_request_release(resp)
+        for (_, entry) in maps {
+            sourcekitd_request_release(entry.resp)
         }
     }
 

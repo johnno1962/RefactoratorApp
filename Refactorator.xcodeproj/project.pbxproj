@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BB04C8351E04423B00FDF253 /* canviz2.html in Resources */ = {isa = PBXBuildFile; fileRef = BB04C8341E04423B00FDF253 /* canviz2.html */; };
+		BB04C8381E045DF500FDF253 /* LineGenerators.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04C8361E045DF500FDF253 /* LineGenerators.swift */; };
+		BB04C8391E045DF500FDF253 /* LogParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04C8371E045DF500FDF253 /* LogParser.swift */; };
 		BB1BE5AB1DE443A800BB802F /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = BB1BE5AA1DE443A800BB802F /* Credits.rtf */; };
 		BB1BE5AC1DE54D4100BB802F /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFFF4321DE13A0600398350 /* libsqlite3.tbd */; };
 		BB1BE5AE1DE801B700BB802F /* Intro.html in Resources */ = {isa = PBXBuildFile; fileRef = BB1BE5AD1DE801B600BB802F /* Intro.html */; };
@@ -33,6 +36,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BB04C8341E04423B00FDF253 /* canviz2.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = canviz2.html; sourceTree = "<group>"; };
+		BB04C8361E045DF500FDF253 /* LineGenerators.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LineGenerators.swift; path = ../../Refactorator/refactord/LineGenerators.swift; sourceTree = "<group>"; };
+		BB04C8371E045DF500FDF253 /* LogParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LogParser.swift; path = ../../Refactorator/refactord/LogParser.swift; sourceTree = "<group>"; };
 		BB1BE5AA1DE443A800BB802F /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		BB1BE5AD1DE801B600BB802F /* Intro.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = Intro.html; sourceTree = "<group>"; };
 		BB2BAFD91DEED26E003715DB /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
@@ -103,8 +109,10 @@
 				BB2CE5621E005ECC00BE0C52 /* AppController.swift */,
 				BB2CE5601E003A6A00BE0C52 /* Formatter.swift */,
 				BBFFF4341DE1781800398350 /* Project.swift */,
+				BB04C8361E045DF500FDF253 /* LineGenerators.swift */,
 				BB8E06891DE869290006BB1D /* IndexStrings.swift */,
 				BB8E06861DE869290006BB1D /* ByteRegex.swift */,
+				BB04C8371E045DF500FDF253 /* LogParser.swift */,
 				BB8E068A1DE869290006BB1D /* SourceKit.swift */,
 				BB8E06881DE869290006BB1D /* IndexDB.swift */,
 				BB8E06871DE869290006BB1D /* Entity.swift */,
@@ -114,6 +122,7 @@
 				BBFFF4091DE1083A00398350 /* MainMenu.xib */,
 				BBFFF4231DE11DBB00398350 /* Source.html */,
 				BB2CE5721E0197AB00BE0C52 /* canviz.html */,
+				BB04C8341E04423B00FDF253 /* canviz2.html */,
 				BB1BE5AA1DE443A800BB802F /* Credits.rtf */,
 				BB1BE5AD1DE801B600BB802F /* Intro.html */,
 				BBFFF40C1DE1083A00398350 /* Info.plist */,
@@ -199,6 +208,7 @@
 				BB2BAFDC1DEEDC36003715DB /* README.md in Resources */,
 				BBFFF4081DE1083A00398350 /* Assets.xcassets in Resources */,
 				BB1BE5AB1DE443A800BB802F /* Credits.rtf in Resources */,
+				BB04C8351E04423B00FDF253 /* canviz2.html in Resources */,
 				BBFFF4131DE1086B00398350 /* App.icns in Resources */,
 				BBFFF40B1DE1083A00398350 /* MainMenu.xib in Resources */,
 				BB2CE5731E0197AB00BE0C52 /* canviz.html in Resources */,
@@ -217,6 +227,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB8E068D1DE869290006BB1D /* IndexDB.swift in Sources */,
+				BB04C8391E045DF500FDF253 /* LogParser.swift in Sources */,
 				BB2CE5631E005ECC00BE0C52 /* AppController.swift in Sources */,
 				BB8E068E1DE869290006BB1D /* IndexStrings.swift in Sources */,
 				BB2CE5611E003A6A00BE0C52 /* Formatter.swift in Sources */,
@@ -225,6 +236,7 @@
 				BB8E068C1DE869290006BB1D /* Entity.swift in Sources */,
 				BB8E068B1DE869290006BB1D /* ByteRegex.swift in Sources */,
 				BBFFF4061DE1083A00398350 /* AppDelegate.swift in Sources */,
+				BB04C8381E045DF500FDF253 /* LineGenerators.swift in Sources */,
 				BBFFF4351DE1781800398350 /* Project.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

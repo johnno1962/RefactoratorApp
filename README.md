@@ -14,6 +14,8 @@ binary](http://johnholdsworth.com/Refactorator.app.zip).
 
 The project now draws interactive dependecncy graphs between sources in a project if you have Graphviz installed.
 
+![Icon](http://johnholdsworth.com/depends.png)
+
 This project is an experiment in "Beerware" there is a "donate" button on the Help Menu ;)
 
 ## MIT Licensed

@@ -330,8 +330,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
 
     @IBAction func findDependencies(sender: AnyObject) {
-        var DOT_PATH = "/usr/local/bin/dot"
-        if !FileManager.default.fileExists(atPath: DOT_PATH) {
+        if !FileManager.default.fileExists(atPath: state.formatter.DOT_PATH) {
             let alert = NSAlert()
             alert.messageText = "Refactorator"
             alert.informativeText = "Dependencies in your application " +
@@ -342,29 +341,59 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
-        var nodeID = 0, nodes = [String:Int]()
-        var dot = "digraph xref {\n    node [fontname=\"Arial\"];\n"
-        func defineNode( _ path: String ) -> String {
-            if nodes[path] == nil {
-                nodeID += 1
-                nodes[path] = nodeID
-                dot += "N\(nodeID) [href=\"javascript:void(click_node('\(path)'))\" label=\"\(path.url.deletingPathExtension().lastPathComponent)\" tooltip=\"\(path)\"];\n"
-            }
-            return "N\(nodes[path]!)"
-        }
-
-        for (to, from, count) in state.project!.indexDB!.dependencies() {
-            dot += "    \(defineNode( from )) -> \(defineNode( to )) [penwidth=\(log10(Double(count)))]\n"
-        }
-
-        dot += "}\n"
-
-        let dotfile = "/tmp/refactorator.dot"
-        try? dot.write(toFile: dotfile, atomically: false, encoding: .utf8)
-        Process.run(path: DOT_PATH, args: [dotfile, "-Txdot", "-o"+state.gvfile])
+        state.formatter.runDepends( state: state )
 
         state.canvizView = nil
         state.setup(target: state.canvizEntity)
+    }
+
+    @IBAction func findAssociated(sender: AnyObject) {
+        state.setChangesSource(header: "Re-indexing to capture relationships between USRs")
+        let logDir = state.project!.derivedData+"/Logs/Build"
+        let filePath = state.history.last!.file
+        let xcodeBuildLogs = LogParser( logDir: logDir )
+        guard let argv = xcodeBuildLogs.compilerArgumentsMatching( matcher: { line in
+            line.contains( " -primary-file \(filePath) " ) ||
+            line.contains( " -primary-file \"\(filePath)\" " ) } ) else {
+                xcode.error( "Could not find compiler arguments in \(logDir). Have you built all files in the project?" )
+                return
+        }
+
+        let SK = Formatter.sourceKit
+        var relatedUSRs = [String]()
+
+        for file in argv.filter( { $0.hasSuffix( ".swift" ) } ) {
+            state.appendSource(title: "", text: "Indexing \(file)\n")
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
+
+            let resp = SK.indexFile( filePath: file, compilerArgs: SK.array( argv: argv ) )
+//            sourcekitd_response_description_dump( resp )
+
+            SK.recurseOver(childID: SK.entitiesID, resp: sourcekitd_response_get_value( resp ) ) {
+                (entity) in
+                if sourcekitd_variant_dictionary_get_uid( entity, SK.kindID ) != SK.classID,
+                    let usr = entity.getString(key: SK.usrID) {
+                    let related = sourcekitd_variant_dictionary_get_value( entity, SK.relatedID )
+                    sourcekitd_variant_array_apply( related ) {
+                        (_,dict) in
+                        if let usr2 = dict.getString(key: SK.usrID) {
+                            let relation = "\(usr)\t\(usr2)"
+                            relatedUSRs.append( relation )
+                            print(relation)
+                        }
+                        return true
+                    }
+                }
+            }
+
+        }
+
+        state.appendSource(title: "", text: "\n<b>Indexing complete \(relatedUSRs.count) reltaionships found.</b>\n")
+
+        if let relatedsPath = state.project?.indexDB?.relatedsDB {
+            try? relatedUSRs.joined(separator: "\n").write(toFile: relatedsPath, atomically: true, encoding: .utf8)
+        }
+
     }
 
 }

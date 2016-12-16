@@ -92,11 +92,6 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
-                            <menuItem title="Sync to Xcode" keyEquivalent="y" id="IAo-SY-fd9">
-                                <connections>
-                                    <action selector="syncToXcodeWithSender:" target="Voe-Tx-rLC" id="pZd-Bk-QaN"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Open…" keyEquivalent="o" id="ss4-gS-ptz">
                                 <connections>
                                     <action selector="openWithSender:" target="Voe-Tx-rLC" id="Ecz-sM-83p"/>
@@ -124,6 +119,11 @@
                                 <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
                                     <action selector="openWorkspaceWithSender:" target="Voe-Tx-rLC" id="gAo-vk-GDx"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Sync to Xcode" keyEquivalent="y" id="IAo-SY-fd9">
+                                <connections>
+                                    <action selector="syncToXcodeWithSender:" target="Voe-Tx-rLC" id="pZd-Bk-QaN"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Undo Apply" keyEquivalent="u" toolTip="Undo any changes applied in memory" id="pxx-59-PXV">
@@ -163,6 +163,12 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="indexRebuildWithSender:" target="Voe-Tx-rLC" id="wZt-mp-h0F"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Index Protocols" toolTip="Re-index project to find associateion bwteen USRs e.g. implements protocol" id="duR-AO-ekK">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="findAssociatedWithSender:" target="Voe-Tx-rLC" id="qu1-vh-8Y2"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Dependencies" toolTip="Find dependencies bewteen source files (requires Graphviz)" id="AK8-sM-fgc">

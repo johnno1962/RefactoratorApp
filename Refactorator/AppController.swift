@@ -9,23 +9,14 @@
 import Foundation
 import WebKit
 
-var xcode: AppController!
+var xcode: AppLogging!
 
-extension Process {
-
-    @discardableResult
-    class func run(path: String, args: [String]) -> Int32 {
-        let task = Process()
-        task.launchPath = path
-        task.arguments = args
-        task.launch()
-        task.waitUntilExit()
-        return task.terminationStatus
-    }
-
+protocol AppLogging {
+    func log( _ msg: String )
+    func error( _ msg: String )
 }
 
-class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDelegate {
+class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
@@ -278,7 +269,7 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
                     if path.contains("/Developer/Platforms/") ||
                         path.contains("/Developer/Toolchains/" ) {
                         system = true
-                        return
+//                        return
                     }
 
                     entitiesByFile.append( entities )
@@ -347,12 +338,8 @@ class AppController: NSObject, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDel
         processEntities(type: "dependencies")
     }
 
-    var gvfile: String {
-        return "/tmp/refactorator.gv"
-    }
-
     @objc func graphvizExport() {
-        open(url: gvfile)
+        open(url: formatter.gvfile)
     }
 
     func applySubstitution(oldValue: String, newValue: String) {
