@@ -6,7 +6,7 @@ for refactoring Swift (well, renaming actually.)
 One of the features of app is it can convert a project into a standalone website of navigable code for
 example [this project](http://johnholdsworth.com/refactorator).
 
-To build, clone this and the code for the Refactorator plugin next to each other the build this project.
+To build, clone this *and the code for the Refactorator plugin* next to each other the build this project.
 Help is available [here](http://johnholdsworth.com/refactorator.html) where you can download a [pre-built
 binary](http://johnholdsworth.com/Refactorator.app.zip).
 
@@ -15,6 +15,9 @@ binary](http://johnholdsworth.com/Refactorator.app.zip).
 The project now draws interactive dependecncy graphs between sources in a project if you have Graphviz installed.
 
 ![Icon](http://johnholdsworth.com/depends.png)
+
+Refactorator now takes into account membership of protocols and overrides in the main target
+if you augment the index db by using the "File/Index Protocols" menu item.
 
 This project is an experiment in "Beerware" there is a "donate" button on the Help Menu ;)
 

@@ -91,6 +91,13 @@
                                     <action selector="forwardWithSender:" target="Voe-Tx-rLC" id="6eK-ju-wUY"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Navigate" id="Ks8-6s-W0O">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Navigate" id="QcH-1k-rC4"/>
+                                <connections>
+                                    <action selector="navigateDirectoriesWithSender:" target="Voe-Tx-rLC" id="eeo-9U-3py"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
                             <menuItem title="Open…" keyEquivalent="o" id="ss4-gS-ptz">
                                 <connections>
@@ -895,11 +902,6 @@
             </connections>
             <point key="canvasLocation" x="-230" y="-291.5"/>
         </window>
-        <menuItem title="Back" keyEquivalent="[" id="OxX-fx-Pdn">
-            <connections>
-                <action selector="backWithSender:" target="Voe-Tx-rLC" id="AkI-DD-i4O"/>
-            </connections>
-        </menuItem>
         <menuItem title="Reload" id="zJ0-Jr-CmZ">
             <modifierMask key="keyEquivalentModifierMask"/>
             <connections>
@@ -973,10 +975,23 @@
                 <action selector="searchSelectionWithSender:" target="Voe-Tx-rLC" id="ZFB-Uh-Dt1"/>
             </connections>
         </menuItem>
+        <menuItem title="Search USRs" toolTip="Search project for USRs matching selection" id="iD6-4l-Ufq">
+            <modifierMask key="keyEquivalentModifierMask"/>
+            <connections>
+                <action selector="searchSelectionWithSender:" target="Voe-Tx-rLC" id="gqS-Mf-gXB"/>
+            </connections>
+        </menuItem>
+        <menuItem title="Dependencies" toolTip="Search project for USRs matching selection" id="T6k-0J-mIM" userLabel="Dependencies">
+            <modifierMask key="keyEquivalentModifierMask"/>
+            <connections>
+                <action selector="findDependenciesWithSender:" target="Voe-Tx-rLC" id="bxb-5V-J0Q"/>
+            </connections>
+        </menuItem>
         <customObject id="nF1-TD-e5Y" customClass="AppController" customModule="Refactorator" customModuleProvider="target">
             <connections>
-                <outlet property="backItem" destination="OxX-fx-Pdn" id="gr2-kX-680"/>
+                <outlet property="backItem" destination="tq0-Xd-Lwk" id="bGs-XU-SEQ"/>
                 <outlet property="changesView" destination="Kfe-Ht-0tr" id="Pci-C5-kAq"/>
+                <outlet property="dependsItem" destination="T6k-0J-mIM" id="paB-69-x0Y"/>
                 <outlet property="findText" destination="cpj-R8-vCt" id="aFk-nw-QAW"/>
                 <outlet property="forwardItem" destination="rZ9-vB-ZMx" id="HsK-1X-VsG"/>
                 <outlet property="reloadItem" destination="zJ0-Jr-CmZ" id="8Gs-yO-6CK"/>
@@ -986,5 +1001,12 @@
                 <outlet property="window" destination="QvC-M9-y7g" id="lsx-29-EL8"/>
             </connections>
         </customObject>
+        <menuItem title="Back" id="tq0-Xd-Lwk">
+            <modifierMask key="keyEquivalentModifierMask"/>
+            <menu key="submenu" title="Back" id="14n-z9-aqj"/>
+            <connections>
+                <action selector="backEntitiesWithSender:" target="Voe-Tx-rLC" id="ntF-lD-c1N"/>
+            </connections>
+        </menuItem>
     </objects>
 </document>

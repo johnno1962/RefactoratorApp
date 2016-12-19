@@ -9,13 +9,6 @@
 import Foundation
 import WebKit
 
-var xcode: AppLogging!
-
-protocol AppLogging {
-    func log( _ msg: String )
-    func error( _ msg: String )
-}
-
 class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebPolicyDelegate {
 
     @IBOutlet weak var window: NSWindow!
@@ -24,7 +17,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     @IBOutlet weak var changesView: WebView!
     weak var printWebView: WebView!
 
-    let canvizEntity = Entity(file: "/CANVIZ/")
+    let canvizEntity = Entity(file: "[Dependencies]")
     var canvizView: WebView!
 
     @IBOutlet weak var replacement: NSTextField!
@@ -33,6 +26,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     @IBOutlet var backItem: NSMenuItem!
     @IBOutlet var forwardItem: NSMenuItem!
     @IBOutlet var reloadItem: NSMenuItem!
+    @IBOutlet var dependsItem: NSMenuItem!
     @IBOutlet var searchItem: NSMenuItem!
 
     var history = [Entity]()
@@ -81,6 +75,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
         let code = sourceHTML()
         if project == nil {
             changesView.uiDelegate = self
+            changesView.frameLoadDelegate = self
             changesView.mainFrame.loadHTMLString(code+"<div>Click on a symbol to locate references to rename</div>", baseURL: nil)
             changesView.policyDelegate = self
         }
@@ -108,7 +103,9 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
 
         let target = target ?? project?.entity ?? defaultEntity()
 
-        printWebView = sourceView
+        if printWebView == nil {
+            printWebView = sourceView
+        }
         setLocation(entity: target)
         future.removeAll()
 
@@ -164,14 +161,17 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     }
 
     @objc func webView(_ sender: WebView!, didFinishLoadFor frame: WebFrame!) {
+        guard let win = sender.windowScriptObject else { return }
         if sender == sourceView {
             sourceView.policyDelegate = self
-            let win = sourceView.windowScriptObject!
             win.setValue(self, forKey:"appController")
             win.callWebScriptMethod("setSource", withArguments: [html])
         }
+        else if sender == changesView {
+            win.setValue(self, forKey:"appController2")
+        }
         else if sender == canvizView {
-            canvizView.windowScriptObject.setValue(self, forKey:"appController")
+            win.setValue(self, forKey:"appController")
         }
     }
 
@@ -187,21 +187,18 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     }
 
     @objc func webView(_ sender: WebView!, contextMenuItemsForElement element: [AnyHashable : Any]!, defaultMenuItems: [Any]!) -> [Any]! {
-        return [backItem, forwardItem, reloadItem, searchItem]
+        return [backItem, forwardItem, reloadItem, dependsItem, searchItem]
     }
     
-    @discardableResult
-    func setChangesSource( header: String? = nil, target: Entity? = nil, isApply: Bool = false ) -> WebScriptObject {
+    func setChangesSource( header: String? = nil, target: Entity? = nil, isApply: Bool = false ) {
         if !isApply, let last = history.last, last != canvizEntity {
             project = Project(target: target ?? last)
         }
-        let win = changesView.windowScriptObject!
-        win.callWebScriptMethod("setSource", withArguments: [header != nil ? "<div class=changesHeader>\(header!)</div>" : ""])
+        let args = [header != nil ? "<div class=changesHeader>\(header!)</div>" : ""]
+        changesView.windowScriptObject.callWebScriptMethod("setSource", withArguments: args)
         if project?.indexDB == nil {
             xcode.error("No index DB found for project: \(project?.workspacePath ?? "unavailable")")
         }
-        win.setValue(self, forKey:"appController2")
-        return win
     }
 
     func appendSource( title: String, text: String ) {
@@ -241,7 +238,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
         }
 
         if let indexDB = project?.indexDB {
-            if let usr = indexDB.usrInFile(filePath: sourcePath, line: line, col: col) {
+            if let usrIDs = indexDB.usrIDsFor(filePath: sourcePath, line: line, col: col) {
 
                 if metaKey, let entity = indexDB.declarationFor(filePath: sourcePath, line: line, col: col) {
                     setup(target: entity, cascade: false)
@@ -250,11 +247,14 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
 
                 setLocation(entity: entity)
 
-                appendSource(title: project!.indexPath, text: "<div class=usr>USR: <span title=\"\(usr)\">\(htmlEscape( demangle( usr )! ))</span></div>")
+                let usrs = usrIDs.map { IndexDB.resolutions[$0] ?? "??\($0)" }
+                let usrText = usrs.sorted { demangle( $0 )! < demangle( $1 )! }
+                    .map { "USR: <span title=\"\($0)\">\(htmlEscape( demangle( $0 ) ))</span>\n" }.joined()
+                appendSource(title: project!.indexPath, text: "<div class=usr>\(usrText)</div>" )
 
                 var system = false
                 var pathSeen = [String:Int]()
-                _ = indexDB.entitiesFor(filePath: sourcePath, line: line, col: col) {
+                _ = indexDB.entitiesFor(usrIDs: usrIDs) {
                     (entities) in
 
                     let path = entities[0].file
@@ -305,7 +305,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     func filtered( _ lines: [String], _ entities: [Entity] ) -> String {
         var path = entities[0].file, filename = relative( path )
         filename = filename.substring(from: filename.range(of: "SDKs")?.lowerBound ?? filename.startIndex)
-        let body = entities.map { lines[$0.line-1] }.joined()
+        let body = Set( entities.map { $0.line } ).sorted().map { lines[$0-1] }.joined()
         return "<a class=sourceLink href=\"file:\(path)\">\(filename)</a>\n<div class='changesEntry'>\(body)</div>"
     }
 

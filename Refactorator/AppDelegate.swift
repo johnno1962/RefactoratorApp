@@ -13,6 +13,36 @@ import Cocoa
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
+    class PathMenuItem: NSMenuItem {
+
+        let path: String
+
+        init(path: String, title: String, action: Selector) {
+            self.path = path
+            super.init(title: title, action: action, keyEquivalent: "")
+        }
+
+        required init(coder decoder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+    }
+
+    class EntityMenuItem: NSMenuItem {
+
+        let entity: Entity
+
+        init(entity: Entity, title: String, action: Selector, keyEquivalent: String) {
+            self.entity = entity
+            super.init(title: title, action: action, keyEquivalent: keyEquivalent)
+        }
+        
+        required init(coder decoder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+    }
+    
     @IBOutlet weak var window: NSWindow!
 
     @IBOutlet var findPanel: NSPanel!
@@ -106,6 +136,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc func applicationWillBecomeActive(_ notification: Notification) {
         window.makeKeyAndOrderFront(nil)
+//        state.setup()
     }
 
     @IBAction func syncToXcode(sender: NSMenuItem) {
@@ -216,6 +247,66 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 return state.project?.projectRoot != Project.unknown
             case #selector(buildSite(sender:)):
                 return state.project?.indexDB != nil
+            case #selector(navigateDirectories(sender:)):
+                if let navigateMenu = aMenuItem.submenu {
+                    while navigateMenu.items.count != 0 {
+                        navigateMenu.removeItem(at: 0)
+                    }
+                    if let indexDB = state.project?.indexDB {
+                        var projectDirs = [String]()
+                        for dirID in indexDB.projectDirIDs.keys {
+                            if let wholePath = indexDB.directories[dirID] {
+                                if wholePath.contains(".") {
+                                    continue
+                                }
+                                projectDirs.append( wholePath )
+                            }
+                        }
+                        for wholePath in projectDirs.sorted() {
+                            var dirPath = wholePath.url
+                            var title = dirPath.lastPathComponent
+                            while title == "Classes" || title == "Source" || title == "Pod" {
+                                dirPath.deleteLastPathComponent()
+                                title = dirPath.lastPathComponent
+                            }
+                            let item = PathMenuItem(path: wholePath, title: title,
+                                                    action: #selector(navigateFiles(sender:)))
+                            item.target = self
+                            item.submenu = NSMenu()
+    //                        item.toolTip = wholePath
+                            navigateMenu.addItem(item)
+                        }
+                    }
+                }
+            case #selector(navigateFiles(sender:)):
+                if let item = aMenuItem as? PathMenuItem,
+                    let menu = item.submenu,
+                    let indexDB = state.project?.indexDB {
+                    for file in indexDB.files(inDirectory: item.path).sorted() {
+                        let item = PathMenuItem(path: item.path+"/"+file, title: file,
+                                                action: #selector(navigateOpen(sender:)))
+                        item.toolTip = item.path+"/"+file
+                        item.target = self
+                        menu.addItem(item)
+                    }
+                }
+            case #selector(backEntities(sender:)):
+                if let backMenu = aMenuItem.submenu {
+                    while backMenu.items.count != 0 {
+                        backMenu.removeItem(at: 0)
+                    }
+                    var number = 0
+                    for entity in state.history.reversed() {
+                        if number > 0 {
+                            let item = EntityMenuItem(entity: entity, title: entity.file.url.lastPathComponent,
+                                                      action: #selector(backOpen(sender:)),
+                                                      keyEquivalent: number == 1 ? "[" : "")
+                            item.target = self
+                            backMenu.addItem(item)
+                        }
+                        number += 1
+                    }
+                }
             default:
                 break
             }
@@ -323,77 +414,56 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
+    @IBAction func navigateDirectories(sender: AnyObject) {
+    }
+    
+    @IBAction func navigateFiles(sender: AnyObject) {
+    }
+    
+    @IBAction func navigateOpen(sender: PathMenuItem) {
+        state.setup(target: Entity(file: sender.path))
+    }
+
+    @IBAction func backEntities(sender: AnyObject) {
+    }
+
+    @IBAction func backOpen(sender: EntityMenuItem) {
+        state.history.last.flatMap { state.future.append($0) }
+        let save = state.future
+        state.setup(target: sender.entity)
+        state.future = save
+    }
+
     @IBAction func buildSite(sender: AnyObject) {
         guard let projectRoot = state.project?.projectRoot else { return }
         state.formatter.buildSite( for: state.project!, into: projectRoot+"/html/", state: state)
     }
 
-
     @IBAction func findDependencies(sender: AnyObject) {
-        if !FileManager.default.fileExists(atPath: state.formatter.DOT_PATH) {
-            let alert = NSAlert()
-            alert.messageText = "Refactorator"
-            alert.informativeText = "Dependencies in your application " +
-                "can be displayed if you install \"dot\" from http://www.graphviz.org/."
-            alert.runModal()
-            state.open(url: "http://www.graphviz.org/Download_macos.php")
-
-            return
+        if sender as? NSMenuItem == state.dependsItem,
+            let path = state.history.last?.file {
+            state.depends(path: path)
         }
+        else {
+            if !FileManager.default.fileExists(atPath: state.formatter.DOT_PATH) {
+                let alert = NSAlert()
+                alert.messageText = "Refactorator"
+                alert.informativeText = "Dependencies in your application " +
+                "can be displayed if you install \"dot\" from http://www.graphviz.org/."
+                alert.runModal()
+                state.open(url: "http://www.graphviz.org/Download_macos.php")
+                return
+            }
+            
+            state.formatter.runDepends(state: state, standalone: false)
 
-        state.formatter.runDepends( state: state )
-
-        state.canvizView = nil
-        state.setup(target: state.canvizEntity)
+            state.canvizView = nil
+            state.setup(target: state.canvizEntity)
+        }
     }
 
     @IBAction func findAssociated(sender: AnyObject) {
-        state.setChangesSource(header: "Re-indexing to capture relationships between USRs")
-        let logDir = state.project!.derivedData+"/Logs/Build"
-        let filePath = state.history.last!.file
-        let xcodeBuildLogs = LogParser( logDir: logDir )
-        guard let argv = xcodeBuildLogs.compilerArgumentsMatching( matcher: { line in
-            line.contains( " -primary-file \(filePath) " ) ||
-            line.contains( " -primary-file \"\(filePath)\" " ) } ) else {
-                xcode.error( "Could not find compiler arguments in \(logDir). Have you built all files in the project?" )
-                return
-        }
-
-        let SK = Formatter.sourceKit
-        var relatedUSRs = [String]()
-
-        for file in argv.filter( { $0.hasSuffix( ".swift" ) } ) {
-            state.appendSource(title: "", text: "Indexing \(file)\n")
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
-
-            let resp = SK.indexFile( filePath: file, compilerArgs: SK.array( argv: argv ) )
-//            sourcekitd_response_description_dump( resp )
-
-            SK.recurseOver(childID: SK.entitiesID, resp: sourcekitd_response_get_value( resp ) ) {
-                (entity) in
-                if sourcekitd_variant_dictionary_get_uid( entity, SK.kindID ) != SK.classID,
-                    let usr = entity.getString(key: SK.usrID) {
-                    let related = sourcekitd_variant_dictionary_get_value( entity, SK.relatedID )
-                    sourcekitd_variant_array_apply( related ) {
-                        (_,dict) in
-                        if let usr2 = dict.getString(key: SK.usrID) {
-                            let relation = "\(usr)\t\(usr2)"
-                            relatedUSRs.append( relation )
-                            print(relation)
-                        }
-                        return true
-                    }
-                }
-            }
-
-        }
-
-        state.appendSource(title: "", text: "\n<b>Indexing complete \(relatedUSRs.count) reltaionships found.</b>\n")
-
-        if let relatedsPath = state.project?.indexDB?.relatedsDB {
-            try? relatedUSRs.joined(separator: "\n").write(toFile: relatedsPath, atomically: true, encoding: .utf8)
-        }
-
+        state.formatter.indexAssociations(filePath: state.history.last!.file, state: state)
     }
 
 }

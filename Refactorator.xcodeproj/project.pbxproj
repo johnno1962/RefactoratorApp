@@ -10,6 +10,7 @@
 		BB04C8351E04423B00FDF253 /* canviz2.html in Resources */ = {isa = PBXBuildFile; fileRef = BB04C8341E04423B00FDF253 /* canviz2.html */; };
 		BB04C8381E045DF500FDF253 /* LineGenerators.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04C8361E045DF500FDF253 /* LineGenerators.swift */; };
 		BB04C8391E045DF500FDF253 /* LogParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04C8371E045DF500FDF253 /* LogParser.swift */; };
+		BB04C83B1E062FB200FDF253 /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB04C83A1E062FB200FDF253 /* Common.swift */; };
 		BB1BE5AB1DE443A800BB802F /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = BB1BE5AA1DE443A800BB802F /* Credits.rtf */; };
 		BB1BE5AC1DE54D4100BB802F /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFFF4321DE13A0600398350 /* libsqlite3.tbd */; };
 		BB1BE5AE1DE801B700BB802F /* Intro.html in Resources */ = {isa = PBXBuildFile; fileRef = BB1BE5AD1DE801B600BB802F /* Intro.html */; };
@@ -39,6 +40,7 @@
 		BB04C8341E04423B00FDF253 /* canviz2.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = canviz2.html; sourceTree = "<group>"; };
 		BB04C8361E045DF500FDF253 /* LineGenerators.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LineGenerators.swift; path = ../../Refactorator/refactord/LineGenerators.swift; sourceTree = "<group>"; };
 		BB04C8371E045DF500FDF253 /* LogParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LogParser.swift; path = ../../Refactorator/refactord/LogParser.swift; sourceTree = "<group>"; };
+		BB04C83A1E062FB200FDF253 /* Common.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
 		BB1BE5AA1DE443A800BB802F /* Credits.rtf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		BB1BE5AD1DE801B600BB802F /* Intro.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = Intro.html; sourceTree = "<group>"; };
 		BB2BAFD91DEED26E003715DB /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
@@ -108,6 +110,7 @@
 				BBFFF4051DE1083A00398350 /* AppDelegate.swift */,
 				BB2CE5621E005ECC00BE0C52 /* AppController.swift */,
 				BB2CE5601E003A6A00BE0C52 /* Formatter.swift */,
+				BB04C83A1E062FB200FDF253 /* Common.swift */,
 				BBFFF4341DE1781800398350 /* Project.swift */,
 				BB04C8361E045DF500FDF253 /* LineGenerators.swift */,
 				BB8E06891DE869290006BB1D /* IndexStrings.swift */,
@@ -231,6 +234,7 @@
 				BB2CE5631E005ECC00BE0C52 /* AppController.swift in Sources */,
 				BB8E068E1DE869290006BB1D /* IndexStrings.swift in Sources */,
 				BB2CE5611E003A6A00BE0C52 /* Formatter.swift in Sources */,
+				BB04C83B1E062FB200FDF253 /* Common.swift in Sources */,
 				BBFFF4201DE10C6400398350 /* Utils.m in Sources */,
 				BB8E068F1DE869290006BB1D /* SourceKit.swift in Sources */,
 				BB8E068C1DE869290006BB1D /* Entity.swift in Sources */,

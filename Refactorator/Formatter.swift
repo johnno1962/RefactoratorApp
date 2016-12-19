@@ -9,32 +9,11 @@
 import Foundation
 import WebKit
 
-func htmlEscape( _ str: String ) -> String {
-    return str.contains("<") || str.contains("&") ?
-        str.replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;") : str
-}
-
-extension Process {
-
-    @discardableResult
-    class func run(path: String, args: [String]) -> Int32 {
-        let task = Process()
-        task.launchPath = path
-        task.arguments = args
-        task.launch()
-        task.waitUntilExit()
-        return task.terminationStatus
-    }
-
-}
-
 protocol AppGui: AppLogging {
 
     var project: Project? { get }
     func sourceHTML() -> String
-    @discardableResult
-    func setChangesSource( header: String?, target: Entity?, isApply: Bool ) -> WebScriptObject
+    func setChangesSource( header: String?, target: Entity?, isApply: Bool )
     func appendSource( title: String, text: String )
     func relative( _ path: String ) -> String
     func open( url: String )
@@ -149,7 +128,7 @@ class Formatter {
 
             var (text, entity) = skipTo( offset: offset+length )
             let type = entity != nil ? "Xc\(entity!.kindSuffix) " : ""
-            let usr = entity?.usr != nil ? htmlEscape( demangle( entity!.usr! )! ) : ""
+            let usr = entity?.usr != nil ? htmlEscape( demangle( entity!.usr! ) ) : ""
 
             if !shortform {
                 span += " \(usr) \(entity?.kind ?? "") \(entity?.role ?? -1)\""
@@ -182,7 +161,8 @@ class Formatter {
     }
 
     func buildSite( for project: Project, into htmlDir: String, state: AppGui ) {
-        state.setChangesSource(header: "Building source site into \(htmlDir)", target: nil, isApply: false )
+        state.setChangesSource(header: "Building source site into \(htmlDir)", target: nil, isApply: false)
+
         try? FileManager.default.createDirectory(atPath: htmlDir, withIntermediateDirectories: false, attributes: nil)
         if var entiesForFiles = project.indexDB?.projectEntities() {
             var referencesByUSR = [Int:[Entity]]()
@@ -203,10 +183,17 @@ class Formatter {
                         }
                     }
                 }
-                let path = entities[0].file
+            }
 
-                dataByFile[path] = NSData(contentsOfFile: path) ?? NSData()
-                linesByFile[path] = htmlFor(path: path, data: dataByFile[path]!, entities: entities, shortform: true)
+            DispatchGroup.inParallel(work: entiesForFiles) {
+                (entities, locked) in
+                let path = entities[0].file
+                let data = NSData(contentsOfFile: path) ?? NSData()
+                let html = self.htmlFor(path: path, data: data, entities: entities, shortform: true)
+                locked {
+                    dataByFile[path] = data
+                    linesByFile[path] = html
+                }
             }
 
             for (usrID, _) in referencesByUSR {
@@ -219,66 +206,54 @@ class Formatter {
 
             let common = state.sourceHTML()
 
-            let siteThreads = 4, threadPool = DispatchGroup()
-
-            for threadNumber in 0..<siteThreads {
-                threadPool.enter()
-                DispatchQueue.global().async {
-                    for fileNumber in stride(from: threadNumber,
-                     through: entiesForFiles.count-1, by: siteThreads) {
-                        let entities = entiesForFiles[fileNumber]
-                        let path = entities[0].file
-                        let out = common + self.htmlFor(path: path, data: dataByFile[path]!, entities: entities, selecting: Entity(file:""), cleanPath: state.relative(path) ) {
-                            (text, entity) -> String in
-                            var text = text
-                            if let entity = entity,
-                                let decl = declarationsByUSR[entity.usrID!],
-                                let related = referencesByUSR[entity.usrID!] {
-                                if related.count > 1 {
-                                    if entity.decl || state.project?.indexDB?.podDirIDs[entity.dirID] == nil {
-                                        var popup = ""
-                                        for ref in related {
-                                            if ref == entity {
-                                                continue
-                                            }
-                                            let keepListOpen = ref.file != decl.file ? "event.stopPropagation(); " : ""
-                                            popup += "<tr\(ref == decl ? " class=decl" : "")><td style='text-decoration: underline;' " +
-                                            "onclick='document.location.href=\"\(href(ref))\"; \(keepListOpen)return false;'>\(ref.file.url.lastPathComponent)</td>"
-                                            let lines = linesByFile[ref.file] ?? []
-                                            let reference = ref.line < lines.count ? lines[ref.line-1] : ""
-                                            popup += "<td><pre>\(reference.replacingOccurrences(of: "\n", with: ""))</pre></td>"
-                                        }
-                                        text = "<a style='color: inherit' name='L\(entity.line)' href='\(href(decl))' target=_self onclick='return expand(this, event.metaKey);'>" +
-                                        "\(text)<span class='references'><table>\(popup)</table></span></a>"
+            DispatchGroup.inParallel(work: entiesForFiles) {
+                (entities, locked) in
+                let path = entities[0].file
+                let out = common + self.htmlFor(path: path, data: dataByFile[path]!, entities: entities, selecting: Entity(file:""), cleanPath: state.relative(path) ) {
+                    (text, entity) -> String in
+                    var text = text
+                    if let entity = entity,
+                        let decl = declarationsByUSR[entity.usrID!],
+                        let related = referencesByUSR[entity.usrID!] {
+                        if related.count > 1 {
+                            if entity.decl || state.project?.indexDB?.podDirIDs[entity.dirID] == nil {
+                                var popup = ""
+                                for ref in related {
+                                    if ref == entity {
+                                        continue
                                     }
-                                    else {
-                                        text = "<a style='color: inherit' href='\(href(decl))'>\(text)</a>"
-                                    }
+                                    let keepListOpen = ref.file != decl.file ? "event.stopPropagation(); " : ""
+                                    popup += "<tr\(ref == decl ? " class=decl" : "")><td style='text-decoration: underline;' " +
+                                    "onclick='document.location.href=\"\(href(ref))\"; \(keepListOpen)return false;'>\(ref.file.url.lastPathComponent)</td>"
+                                    let lines = linesByFile[ref.file] ?? []
+                                    let reference = ref.line < lines.count ? lines[ref.line-1] : ""
+                                    popup += "<td><pre>\(reference.replacingOccurrences(of: "\n", with: ""))</pre></td>"
                                 }
-                                else if entity.decl == true {
-                                    text = "<a style='color: inherit' name='L\(entity.line)' no_href='\(href(decl))'>\(text)</a>"
-                                }
+                                text = "<a style='color: inherit' name='L\(entity.line)' href='\(href(decl))' target=_self onclick='return expand(this, event.metaKey);'>" +
+                                "\(text)<span class='references'><table>\(popup)</table></span></a>"
                             }
-                            return text
-                            }.joined()
-
-                        let final = htmlDir.url.appendingPathComponent(self.htmlFile(state, path))
-                        do {
-                            try out.write(to: final, atomically: false, encoding: .utf8)
-                            DispatchQueue.main.async {
-                                state.appendSource(title: "", text: "Wrote <a href=\"file://\(final.path)\">\(final.path)</a>\n")
+                            else {
+                                text = "<a style='color: inherit' href='\(href(decl))'>\(text)</a>"
                             }
                         }
-                        catch (let e) {
-                            print("Could not save to \(final): \(e)")
+                        else if entity.decl == true {
+                            text = "<a style='color: inherit' name='L\(entity.line)' no_href='\(href(decl))'>\(text)</a>"
                         }
                     }
+                    return text
+                    }.joined()
 
-                    threadPool.leave()
+                let final = htmlDir.url.appendingPathComponent(self.htmlFile(state, path))
+                do {
+                    try out.write(to: final, atomically: false, encoding: .utf8)
+                    DispatchQueue.main.async {
+                        state.appendSource(title: "", text: "Wrote <a href=\"file://\(final.path)\">\(final.path)</a>\n")
+                    }
+                }
+                catch (let e) {
+                    print("Could not save to \(final): \(e)")
                 }
             }
-
-            threadPool.wait()
 
             do {
                 let workspace = state.project?.workspaceName ?? "unknown"
@@ -293,19 +268,25 @@ class Formatter {
                 sources += "<p>Dependencies Graph can be found <a href='canviz.html'>here</a>."
                 let index = htmlDir+"index.html"
                 try sources.write(toFile: index, atomically: false, encoding: .utf8)
+                DispatchQueue.main.async {
+                    state.appendSource(title: "", text: "Wrote <a href=\"file://\(index)\">\(index)</a>\n")
+                }
 
-                state.open(url: index)
-                
                 sources = common+"</pre><div class=filelist><h2>Symbols defined in \(workspace)</h2><script> document.title = 'Symbols defined in \(workspace)' </script>"
                 
                 for entity in declarationsByUSR.values.sorted(by: {demangle($0.0.usr)! < demangle($0.1.usr)!}) {
-                    sources += "<a href='\(href(entity))'>\(demangle(entity.usr)!)</a><br>"
+                    sources += "<a href='\(href(entity))'>\(htmlEscape( demangle(entity.usr) ))</a><br>"
                 }
                 
                 let xref = htmlDir+"xref.html"
                 try sources.write(toFile: xref, atomically: false, encoding: .utf8)
+                DispatchQueue.main.async {
+                    state.appendSource(title: "", text: "Wrote <a href=\"file://\(xref)\">\(xref)</a>\n")
+                }
 
-                runDepends(state: state)
+                state.open(url: index)
+
+                runDepends(state: state, standalone: true)
 
                 let dotFile = htmlDir+"refactorator.gv"
                 try? FileManager.default.removeItem(atPath: dotFile)
@@ -329,15 +310,17 @@ class Formatter {
         return "/tmp/refactorator.gv"
     }
 
-    func runDepends( state: AppGui ) {
+    func runDepends( state: AppGui, standalone: Bool ) {
         var nodeID = 0, nodes = [String:Int]()
         var dot = "digraph xref {\n    node [fontname=\"Arial\"];\n"
         func defineNode( _ path: String ) -> String {
             if nodes[path] == nil {
                 nodeID += 1
                 nodes[path] = nodeID
-                dot += "N\(nodeID) [href=\"javascript:void(click_node('\(path)', '\(htmlFile(state, path))'))\" " +
-                    "label=\"\(path.url.deletingPathExtension().lastPathComponent)\" tooltip=\"\(path)\"];\n"
+                let label = path.hasSuffix(".swift") ?
+                    path.url.deletingPathExtension().lastPathComponent : path.url.lastPathComponent
+                dot += "N\(nodeID) [href=\"javascript:void(click_node('\(standalone ? htmlFile(state, path) : path)'))\" " +
+                    "label=\"\(label)\" tooltip=\"\(state.relative(path))\"];\n"
             }
             return "N\(nodes[path]!)"
         }
@@ -352,6 +335,78 @@ class Formatter {
         try? dot.write(toFile: dotfile, atomically: false, encoding: .utf8)
 
         Process.run(path: DOT_PATH, args: [dotfile, "-Txdot", "-o"+gvfile])
+    }
+
+    func indexAssociations( filePath: String, state: AppGui ) {
+
+        let logDir = state.project!.derivedData+"/Logs/Build"
+        let xcodeBuildLogs = LogParser( logDir: logDir )
+
+        guard let argv = xcodeBuildLogs.compilerArgumentsMatching( matcher: { line in
+            line.contains( " -primary-file \(filePath) " ) ||
+                line.contains( " -primary-file \"\(filePath)\" " ) } ) else {
+                    xcode.error( "Could not find compiler arguments in \(logDir). Have you built all files in the project?" )
+                    return
+        }
+
+        state.setChangesSource(header: "Re-indexing to capture associations between USRs", target: nil, isApply: false)
+
+        DispatchQueue.global().async {
+            let SK = Formatter.sourceKit
+            var relatedUSRs = "", count = 0
+            let files = argv.filter { $0.hasSuffix( ".swift" ) }
+            let notRelated = "^source\\.lang\\.swift\\.decl\\.(extension\\.)?(class|struct|enum|protocol)$"
+            let regexp = try! NSRegularExpression(pattern: notRelated, options: [])
+
+            DispatchGroup.inParallel(work: files ) {
+                (file, locked) in
+                DispatchQueue.main.async {
+                    state.appendSource(title: "", text: "Indexing \(file)\n")
+                }
+
+                var fileRelatedUSRs = [String]()
+                let resp = SK.indexFile( filePath: file, compilerArgs: SK.array( argv: argv ) )
+                sourcekitd_response_description_dump( resp )
+
+                SK.recurseOver( childID: SK.entitiesID, resp: sourcekitd_response_get_value( resp ) ) {
+                    (entity) in
+                    let related = sourcekitd_variant_dictionary_get_value( entity, SK.relatedID )
+                    if sourcekitd_variant_get_type( related ) == SOURCEKITD_VARIANT_TYPE_ARRAY {
+                        let kind = entity.getUUIDString(key: SK.kindID )
+                        if regexp.firstMatch(in: kind, options: [], range: NSMakeRange(0, kind.utf16.count)) == nil,
+                            let usr = entity.getString(key: SK.usrID) {
+                            sourcekitd_variant_array_apply( related ) {
+                                (_,dict) in
+                                if let usr2 = dict.getString(key: SK.usrID) {
+                                    fileRelatedUSRs.append( "\(usr)\t\(usr2)\n" )
+                                }
+                                return true
+                            }
+                        }
+                    }
+                }
+
+                sourcekitd_response_dispose( resp )
+
+                let entry = "\(mtime(file))\t\(file)\n"+fileRelatedUSRs.joined()
+                print( entry )
+
+                if fileRelatedUSRs.count != 0 {
+                    locked {
+                        relatedUSRs += entry
+                        count += fileRelatedUSRs.count
+                    }
+                }
+            }
+
+            if let relatedsPath = state.project?.indexDB?.relatedsDB {
+                try? relatedUSRs.write(toFile: relatedsPath, atomically: true, encoding: .utf8)
+            }
+
+            DispatchQueue.main.async {
+                state.appendSource(title: "", text: "\n<b>Indexing complete. \(count) associations found in \(files.count) files.</b>\n")
+            }
+        }
     }
 
     deinit {

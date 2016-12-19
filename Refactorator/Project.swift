@@ -10,14 +10,6 @@ import Cocoa
 
 let HOME = String( cString: getenv("HOME") )
 
-extension Entity {
-
-    var sourceName: String {
-        return file.url.lastPathComponent
-    }
-
-}
-
 struct Project {
 
     static var lastProject: Project?
@@ -119,6 +111,7 @@ struct Project {
                     (projectRoot, derivedData, indexPath, indexDB) =
                         try Project.openWorkspace(workspaceDoc: workspaceDoc, workspacePath: workspacePath, relative: true)
                     if target != nil ? IndexDB.projectIncludes(file: target!.file) : true {
+                        print("workspace: \(workspacePath)")
                         break
                     }
                 }
@@ -127,6 +120,7 @@ struct Project {
                         (projectRoot, derivedData, indexPath, indexDB) =
                             try Project.openWorkspace(workspaceDoc: workspaceDoc, workspacePath: workspacePath, relative: false)
                         if target != nil ? IndexDB.projectIncludes(file: target!.file) : true {
+                            print("workspace: \(workspacePath)")
                             break
                         }
                     }
@@ -138,10 +132,12 @@ struct Project {
 
             let relevantDoc = xCode.sourceDocuments().filter {
                 let sourceDoc = $0 as! SBObject
+//                print("sourceDoc: \(sourceDoc.path!)")
                 return IndexDB.projectIncludes(file: sourceDoc.path) && sourceDoc.selectedCharacterRange != nil
-            }.first
+            }.last
 
             if let sourceDoc = relevantDoc as? SBObject {
+                print("relevantDoc: \(sourceDoc.path!)")
                 let sourcePath = sourceDoc.path.url.resolvingSymlinksInPath().path
 
                 do {
@@ -165,11 +161,13 @@ struct Project {
             do {
                 (projectRoot, derivedData, indexPath, indexDB) =
                     try Project.openWorkspace(workspaceDoc: workspaceDoc, workspacePath: workspacePath, relative: true)
+                print("alternate workspace: \(workspacePath)")
             }
             catch {
                 do {
                     (projectRoot, derivedData, indexPath, indexDB) =
                         try Project.openWorkspace(workspaceDoc: workspaceDoc, workspacePath: workspacePath, relative: false)
+                    print("alternate workspace: \(workspacePath)")
                 }
                 catch {
                     xcode.error("Error finding indexDB for \(workspacePath)")

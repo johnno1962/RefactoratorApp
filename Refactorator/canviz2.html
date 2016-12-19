@@ -18,7 +18,7 @@
             document.observe('dom:loaded', function() {
                  canviz = new Canviz('canviz', 'refactorator.gv?flush='+Math.random());
             });
-            function click_node(node,href) {
+            function click_node(href) {
                 document.location.href = href
                 return false
             }
