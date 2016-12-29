@@ -16,7 +16,7 @@
         <script>
             var canviz;
             document.observe('dom:loaded', function() {
-                 canviz = new Canviz('canviz', '/tmp/refactorator.gv?flush='+Math.random());
+                 canviz = new Canviz('canviz', '/tmp/canviz.gv?flush='+Math.random());
             });
             function click_node(node) {
                 appController.dependsWithPath_( node )

@@ -71,14 +71,24 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
         return Entity(file: Bundle.main.path(forResource: "Intro", ofType: "html")!)
     }
 
-    func setup( target: Entity? = nil, cascade: Bool = true ) {
+    @discardableResult
+    func setupChanges() -> String {
         let code = sourceHTML()
-        if project == nil {
+        if changesView.uiDelegate == nil {
             changesView.uiDelegate = self
             changesView.frameLoadDelegate = self
             changesView.mainFrame.loadHTMLString(code+"<div>Click on a symbol to locate references to rename</div>", baseURL: nil)
+            changesView.windowScriptObject.setValue(self, forKey:"appController2")
             changesView.policyDelegate = self
         }
+        return code
+    }
+
+    func setup( target: Entity? = nil, cascade: Bool = true ) {
+        let code = setupChanges()
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
 
         if target != canvizEntity {
             project = Project(target: target)
@@ -191,10 +201,18 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     }
     
     func setChangesSource( header: String? = nil, target: Entity? = nil, isApply: Bool = false ) {
+        window.makeKeyAndOrderFront(nil)
+        if changesView.uiDelegate == nil {
+            setupChanges()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+        }
+
         if !isApply, let last = history.last, last != canvizEntity {
             project = Project(target: target ?? last)
         }
+
         let args = [header != nil ? "<div class=changesHeader>\(header!)</div>" : ""]
+        changesView.windowScriptObject.setValue(self, forKey:"appController2")
         changesView.windowScriptObject.callWebScriptMethod("setSource", withArguments: args)
         if project?.indexDB == nil {
             xcode.error("No index DB found for project: \(project?.workspacePath ?? "unavailable")")

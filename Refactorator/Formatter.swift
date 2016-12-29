@@ -307,7 +307,7 @@ class Formatter {
 
     var DOT_PATH = "/usr/local/bin/dot"
     var gvfile: String {
-        return "/tmp/refactorator.gv"
+        return "/tmp/canviz.gv"
     }
 
     func runDepends( state: AppGui, standalone: Bool ) {
@@ -366,7 +366,7 @@ class Formatter {
 
                 var fileRelatedUSRs = [String]()
                 let resp = SK.indexFile( filePath: file, compilerArgs: SK.array( argv: argv ) )
-                sourcekitd_response_description_dump( resp )
+//                sourcekitd_response_description_dump( resp )
 
                 SK.recurseOver( childID: SK.entitiesID, resp: sourcekitd_response_get_value( resp ) ) {
                     (entity) in

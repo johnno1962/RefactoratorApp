@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="15G1108" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="15G1212" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
@@ -14,7 +14,7 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Refactorator" customModuleProvider="target">
+        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Injection" customModuleProvider="target">
             <connections>
                 <outlet property="applyButton" destination="Izx-PW-zhY" id="iBw-bi-MwO"/>
                 <outlet property="findPanel" destination="A2I-eS-piB" id="f2N-7f-Gh0"/>
@@ -433,7 +433,7 @@
                                     <action selector="openFindWithSender:" target="Voe-Tx-rLC" id="k7k-IT-vf2"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Find Orphans" toolTip="Search for symbols declared but not referred to in code" id="jEQ-l8-b1a">
+                            <menuItem title="Find Unused" toolTip="Search for symbols declared but not referred to in code" id="jEQ-l8-b1a">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="findOrphansWithSender:" target="Voe-Tx-rLC" id="WaZ-nh-8RO"/>
@@ -770,7 +770,7 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                         <items>
-                            <menuItem title="Refactorator Help" keyEquivalent="?" id="FKE-Sm-Kum">
+                            <menuItem title="General Help" keyEquivalent="?" id="FKE-Sm-Kum">
                                 <connections>
                                     <action selector="helpWithSender:" target="Voe-Tx-rLC" id="sYW-Kc-obu"/>
                                 </connections>
@@ -785,7 +785,7 @@
                 </menuItem>
             </items>
         </menu>
-        <window title="Welcome to Refactorator" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" frameAutosaveName="Refactorator" animationBehavior="default" id="QvC-M9-y7g">
+        <window title="Welcome to Refactorator" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="Refactorator" animationBehavior="default" id="QvC-M9-y7g">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="335" y="390" width="718" height="713"/>
@@ -987,7 +987,7 @@
                 <action selector="findDependenciesWithSender:" target="Voe-Tx-rLC" id="bxb-5V-J0Q"/>
             </connections>
         </menuItem>
-        <customObject id="nF1-TD-e5Y" customClass="AppController" customModule="Refactorator" customModuleProvider="target">
+        <customObject id="nF1-TD-e5Y" customClass="AppController" customModule="Injection" customModuleProvider="target">
             <connections>
                 <outlet property="backItem" destination="tq0-Xd-Lwk" id="bGs-XU-SEQ"/>
                 <outlet property="changesView" destination="Kfe-Ht-0tr" id="Pci-C5-kAq"/>

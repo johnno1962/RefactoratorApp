@@ -10,7 +10,7 @@ import Cocoa
 
 let HOME = String( cString: getenv("HOME") )
 
-struct Project {
+class Project: NSObject {
 
     static var lastProject: Project?
     static var unknown = "unknown"
@@ -131,9 +131,10 @@ struct Project {
             }
 
             let relevantDoc = xCode.sourceDocuments().filter {
-                let sourceDoc = $0 as! SBObject
+                let sourceDoc = $0 as! SBObject, ext = sourceDoc.path?.url.pathExtension
 //                print("sourceDoc: \(sourceDoc.path!)")
-                return IndexDB.projectIncludes(file: sourceDoc.path) && sourceDoc.selectedCharacterRange != nil
+                return IndexDB.projectIncludes(file: sourceDoc.path) && sourceDoc.selectedCharacterRange != nil &&
+                    (ext == "swift" || ext == "m" || ext == "mm" || ext == "c" || ext == "h")
             }.last
 
             if let sourceDoc = relevantDoc as? SBObject {
@@ -176,8 +177,13 @@ struct Project {
         }
 
         if indexDB == nil && Project.lastProject?.indexDB != nil {
-            self = Project.lastProject!
+            let previous = Project.lastProject!
+            (workspacePath, projectRoot, derivedData, indexPath, indexDB) =
+                (previous.workspacePath, previous.projectRoot, previous.derivedData,
+                 previous.indexPath, IndexDB(dbPath: previous.indexPath))
         }
+
+        super.init()
         Project.lastProject = self
     }
 
