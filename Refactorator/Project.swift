@@ -38,14 +38,23 @@ class Project: NSObject {
             HOME.url.appendingPathComponent("Library/Developer/Xcode/DerivedData")).appendingPathComponent( projectName
                 .replacingOccurrences(of: " ", with: "_") + (relative ? "" : "-" + Utils.hashString(forPath: workspacePath)) ).path
 
-        let deployments  = try FileManager.default.contentsOfDirectory(atPath: derivedData+"/Index/Debug")
-        let runDest = workspaceDoc?.activeRunDestination
-        func makeIndexPath( _ platformArch: String ) -> String {
-            return "\(derivedData)/Index/Debug/\(platformArch)/\(projectName).xcindex/db.xcindexdb"
+        var indexPaths = [String]()
+        for config in try FileManager.default.contentsOfDirectory(atPath: derivedData+"/Index" ) {
+            let configPath = "\(derivedData)/Index/\(config)"
+            if configPath.url.hasDirectoryPath {
+                for platformArch in try FileManager.default.contentsOfDirectory(atPath: configPath) {
+                    indexPaths.append( "\(configPath)/\(platformArch)" )
+                }
+            }
         }
 
-        let platformArch = deployments.filter { $0 != ".DS_Store" &&
-            (runDest == nil || ($0.hasPrefix(runDest!.platform) && $0.hasSuffix(runDest!.architecture))) }.sorted(by: {
+        let runDest = workspaceDoc?.activeRunDestination
+        func makeIndexPath( _ indexPath: String ) -> String {
+            return "\(indexPath)/\(projectName).xcindex/db.xcindexdb"
+        }
+
+        let platformArch = indexPaths.filter { $0.url.hasDirectoryPath && (runDest == nil ||
+            ($0.contains(runDest!.platform) && $0.hasSuffix(runDest!.architecture))) }.sorted(by: {
             (a, b) in
             return mtime( makeIndexPath( a )+".strings-res" ) > mtime( makeIndexPath( b )+".strings-res" )
         } ).first
