@@ -70,27 +70,28 @@ class Project: NSObject {
     static func findProject(for target: Entity) -> String? {
         let manager = FileManager.default
 
-        func fileWithExtension( ext: String, in dirURL: URL ) -> String? {
-            do {
-                for name in try manager.contentsOfDirectory(atPath: dirURL.path) {
-                    if name.url.pathExtension == ext {
-                        return name
-                    }
+        func fileWithExtension( ext: String, in dirURL: URL ) throws -> String? {
+            for name in try manager.contentsOfDirectory(atPath: dirURL.path) {
+                if name.url.pathExtension == ext {
+                    return name
                 }
-            }
-            catch {
-                xcode.error("Could not list directory \(dirURL)")
             }
             return nil
         }
 
+        print("findProject for: \(target.file)")
         for ext in ["xcworkspace", "xcodeproj"] {
             var potentialRoot = target.file.url.deletingLastPathComponent()
-            while potentialRoot.path != "/" {
-                if let foundProject = fileWithExtension(ext: ext, in: potentialRoot) {
-                    return potentialRoot.appendingPathComponent(foundProject).path
+            do {
+                while potentialRoot.path != "/" {
+                    if let foundProject = try fileWithExtension(ext: ext, in: potentialRoot) {
+                        return potentialRoot.appendingPathComponent(foundProject).path
+                    }
+                    potentialRoot.deleteLastPathComponent()
                 }
-                potentialRoot.deleteLastPathComponent()
+            }
+            catch {
+                xcode.error("Could not list directory \(potentialRoot)")
             }
         }
 

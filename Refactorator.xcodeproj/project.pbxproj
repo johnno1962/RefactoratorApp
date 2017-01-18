@@ -32,7 +32,6 @@
 		BBFFF4131DE1086B00398350 /* App.icns in Resources */ = {isa = PBXBuildFile; fileRef = BBFFF4121DE1086B00398350 /* App.icns */; };
 		BBFFF4161DE109BC00398350 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFFF4151DE109BC00398350 /* WebKit.framework */; };
 		BBFFF4201DE10C6400398350 /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = BBFFF41F1DE10C6400398350 /* Utils.m */; };
-		BBFFF4221DE1130800398350 /* sourcekitd.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFFF4211DE1130800398350 /* sourcekitd.framework */; };
 		BBFFF4241DE11DBB00398350 /* Source.html in Resources */ = {isa = PBXBuildFile; fileRef = BBFFF4231DE11DBB00398350 /* Source.html */; };
 		BBFFF4351DE1781800398350 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFFF4341DE1781800398350 /* Project.swift */; };
 /* End PBXBuildFile section */
@@ -78,7 +77,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBFFF4221DE1130800398350 /* sourcekitd.framework in Frameworks */,
 				BBFFF4161DE109BC00398350 /* WebKit.framework in Frameworks */,
 				BB1BE5AC1DE54D4100BB802F /* libsqlite3.tbd in Frameworks */,
 			);
@@ -365,7 +363,7 @@
 				DEVELOPMENT_TEAM = 9V5A8WE85E;
 				FRAMEWORK_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib";
 				INFOPLIST_FILE = Refactorator/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.johnholdsworth.Refactorator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Refactorator/Refactorator-Bridging-Header.h";
@@ -384,7 +382,7 @@
 				DEVELOPMENT_TEAM = 9V5A8WE85E;
 				FRAMEWORK_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib";
 				INFOPLIST_FILE = Refactorator/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.johnholdsworth.Refactorator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Refactorator/Refactorator-Bridging-Header.h";

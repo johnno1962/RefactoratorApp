@@ -162,6 +162,17 @@ function searchSelected( span, meta, cascade, click ) {
     }
 }
 
+function gotoFile( file, line ) {
+    appController2.gotoWithFile_line_( file, line )
+    return false
+}
+
+function gotoLine( line ) {
+    var label = document.getElementById( "L"+line )
+    label.style.color = "red"
+    scrollTo( 0, label.offsetTop-window.innerHeight/3 )
+}
+
 var lastlink;
 
 function expand(a, metaKey) {

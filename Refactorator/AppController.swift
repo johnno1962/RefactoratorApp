@@ -78,8 +78,9 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
             changesView.uiDelegate = self
             changesView.frameLoadDelegate = self
             changesView.mainFrame.loadHTMLString(code+"<div>Click on a symbol to locate references to rename</div>", baseURL: nil)
-            changesView.windowScriptObject.setValue(self, forKey:"appController2")
             changesView.policyDelegate = self
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+            changesView.windowScriptObject.setValue(self, forKey:"appController2")
         }
         return code
     }
@@ -230,11 +231,19 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     }
 
     @objc override class func isSelectorExcluded( fromWebScript aSelector: Selector ) -> Bool {
-        return aSelector != #selector(selected(text:title:line:col:offset:metaKey:)) &&
+        return
+            aSelector != #selector(selected(text:title:line:col:offset:metaKey:)) &&
             aSelector != #selector(changeSelected(text:title:line:col:offset:metaKey:)) &&
-            aSelector != #selector(depends(path:)) && aSelector != #selector(graphvizExport)
+            aSelector != #selector(depends(path:)) &&
+            aSelector != #selector(graphvizExport) &&
+            aSelector != #selector(goto(file:line:))
     }
-    
+
+    @objc func goto(file: String, line: Int) {
+        setup(target: Entity(file: file))
+        sourceView.windowScriptObject.callWebScriptMethod("gotoLine", withArguments: ["\(line)"])
+    }
+
     @objc public func selected( text: String, title: String, line: Int, col: Int, offset: Int, metaKey: Bool ) {
         let entity = Entity(file: history.last?.file ?? title.components(separatedBy: "#")[0],
                             line: line, col: col, offset: offset)
@@ -323,7 +332,7 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
     func filtered( _ lines: [String], _ entities: [Entity] ) -> String {
         var path = entities[0].file, filename = relative( path )
         filename = filename.substring(from: filename.range(of: "SDKs")?.lowerBound ?? filename.startIndex)
-        let body = Set( entities.map { $0.line } ).sorted().map { lines[$0-1] }.joined()
+        let linenos = Set( entities.map { $0.line } ).sorted(), body = linenos.map { lines[$0-1] }.joined()
         return "<a class=sourceLink href=\"file:\(path)\">\(filename)</a>\n<div class='changesEntry'>\(body)</div>"
     }
 

@@ -108,9 +108,9 @@ class Formatter {
 
         var extensions = [String:String]()
 
-        let dict = sourcekitd_response_get_value( resp )
-        let map = sourcekitd_variant_dictionary_get_value( dict, sourceKit.syntaxID )
-        sourcekitd_variant_array_apply( map ) { (_,dict) in
+        let dict = SKApi.sourcekitd_response_get_value( resp )
+        let map = SKApi.sourcekitd_variant_dictionary_get_value( dict, sourceKit.syntaxID )
+        _ = SKApi.sourcekitd_variant_array_apply( map ) { (_,dict) in
             let kind = dict.getUUIDString( key: sourceKit.kindID )
             let offset = dict.getInt( key: sourceKit.offsetID )
             let length = dict.getInt( key: sourceKit.lengthID )
@@ -146,11 +146,11 @@ class Formatter {
 
         html += skipTo( offset: data.length-skewtotal ).0
 
-        var lineNumber = 0
+        var lineno = 0
         let lines = html.components(separatedBy: "\n").map {
             (line) -> String in
-            lineNumber += 1
-            return String(format:"<span class=linenumber>%04d&nbsp;</span>", lineNumber)+line+"\n"
+            lineno += 1
+            return String(format:"<span class=linenumber id=L\(lineno)>%04d&nbsp;</span>", lineno)+line+"\n"
         }
         
         return lines
@@ -366,16 +366,16 @@ class Formatter {
 
                 var fileRelatedUSRs = [String]()
                 let resp = SK.indexFile( filePath: file, compilerArgs: SK.array( argv: argv ) )
-//                sourcekitd_response_description_dump( resp )
+//                SKApi.sourcekitd_response_description_dump( resp )
 
-                SK.recurseOver( childID: SK.entitiesID, resp: sourcekitd_response_get_value( resp ) ) {
+                SK.recurseOver( childID: SK.entitiesID, resp: SKApi.sourcekitd_response_get_value( resp ) ) {
                     (entity) in
-                    let related = sourcekitd_variant_dictionary_get_value( entity, SK.relatedID )
-                    if sourcekitd_variant_get_type( related ) == SOURCEKITD_VARIANT_TYPE_ARRAY {
+                    let related = SKApi.sourcekitd_variant_dictionary_get_value( entity, SK.relatedID )
+                    if SKApi.sourcekitd_variant_get_type( related ) == SOURCEKITD_VARIANT_TYPE_ARRAY {
                         let kind = entity.getUUIDString(key: SK.kindID )
                         if regexp.firstMatch(in: kind, options: [], range: NSMakeRange(0, kind.utf16.count)) == nil,
                             let usr = entity.getString(key: SK.usrID) {
-                            sourcekitd_variant_array_apply( related ) {
+                            _ = SKApi.sourcekitd_variant_array_apply( related ) {
                                 (_,dict) in
                                 if let usr2 = dict.getString(key: SK.usrID) {
                                     fileRelatedUSRs.append( "\(usr)\t\(usr2)\n" )
@@ -386,7 +386,7 @@ class Formatter {
                     }
                 }
 
-                sourcekitd_response_dispose( resp )
+                SKApi.sourcekitd_response_dispose( resp )
 
                 let entry = "\(mtime(file))\t\(file)\n"+fileRelatedUSRs.joined()
                 print( entry )
@@ -411,7 +411,7 @@ class Formatter {
 
     deinit {
         for (_, entry) in maps {
-            sourcekitd_request_release(entry.resp)
+            SKApi.sourcekitd_request_release(entry.resp)
         }
     }
 

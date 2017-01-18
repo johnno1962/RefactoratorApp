@@ -72,6 +72,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let count = max(0,defaults.integer(forKey: countKey))+1
         defaults.set(count, forKey: countKey)
 
+//        window.contentView?.wantsLayer = true
+//        window.appearance = NSAppearance(named: NSAppearanceNameVibrantDark)
+
         _ = Integration(appDelegate: self, count: count)
     }
 
