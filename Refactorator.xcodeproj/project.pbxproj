@@ -21,6 +21,8 @@
 		BB2CE5731E0197AB00BE0C52 /* canviz.html in Resources */ = {isa = PBXBuildFile; fileRef = BB2CE5721E0197AB00BE0C52 /* canviz.html */; };
 		BB356BE21E0C75A30056B10F /* Integration.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB356BE11E0C75A30056B10F /* Integration.swift */; };
 		BB3A5EEB1DE3A76C00184151 /* Xcode.h in Resources */ = {isa = PBXBuildFile; fileRef = BBFFF4281DE1311300398350 /* Xcode.h */; };
+		BB6528251E69730300B8FB95 /* Coverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6528241E69730300B8FB95 /* Coverage.swift */; };
+		BB6528291E69821200B8FB95 /* coverage.rb in Resources */ = {isa = PBXBuildFile; fileRef = BB6528261E6973CD00B8FB95 /* coverage.rb */; };
 		BB8E068B1DE869290006BB1D /* ByteRegex.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8E06861DE869290006BB1D /* ByteRegex.swift */; };
 		BB8E068C1DE869290006BB1D /* Entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8E06871DE869290006BB1D /* Entity.swift */; };
 		BB8E068D1DE869290006BB1D /* IndexDB.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8E06881DE869290006BB1D /* IndexDB.swift */; };
@@ -50,6 +52,8 @@
 		BB2CE5701E01965E00BE0C52 /* canviz-0.1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "canviz-0.1"; sourceTree = "<group>"; };
 		BB2CE5721E0197AB00BE0C52 /* canviz.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = canviz.html; sourceTree = "<group>"; };
 		BB356BE11E0C75A30056B10F /* Integration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Integration.swift; sourceTree = "<group>"; };
+		BB6528241E69730300B8FB95 /* Coverage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Coverage.swift; sourceTree = "<group>"; };
+		BB6528261E6973CD00B8FB95 /* coverage.rb */ = {isa = PBXFileReference; lastKnownFileType = text.script.ruby; path = coverage.rb; sourceTree = "<group>"; };
 		BB8E06861DE869290006BB1D /* ByteRegex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ByteRegex.swift; path = ../../Refactorator/refactord/ByteRegex.swift; sourceTree = "<group>"; };
 		BB8E06871DE869290006BB1D /* Entity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Entity.swift; path = ../../Refactorator/refactord/Entity.swift; sourceTree = "<group>"; };
 		BB8E06881DE869290006BB1D /* IndexDB.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = IndexDB.swift; path = ../../Refactorator/refactord/IndexDB.swift; sourceTree = "<group>"; };
@@ -112,6 +116,7 @@
 				BB2CE5601E003A6A00BE0C52 /* Formatter.swift */,
 				BB04C83A1E062FB200FDF253 /* Common.swift */,
 				BBFFF4341DE1781800398350 /* Project.swift */,
+				BB6528241E69730300B8FB95 /* Coverage.swift */,
 				BB356BE11E0C75A30056B10F /* Integration.swift */,
 				BB04C8361E045DF500FDF253 /* LineGenerators.swift */,
 				BB8E06891DE869290006BB1D /* IndexStrings.swift */,
@@ -127,6 +132,7 @@
 				BBFFF4231DE11DBB00398350 /* Source.html */,
 				BB2CE5721E0197AB00BE0C52 /* canviz.html */,
 				BB04C8341E04423B00FDF253 /* canviz2.html */,
+				BB6528261E6973CD00B8FB95 /* coverage.rb */,
 				BB1BE5AA1DE443A800BB802F /* Credits.rtf */,
 				BB1BE5AD1DE801B600BB802F /* Intro.html */,
 				BBFFF40C1DE1083A00398350 /* Info.plist */,
@@ -210,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB2BAFDC1DEEDC36003715DB /* README.md in Resources */,
+				BB6528291E69821200B8FB95 /* coverage.rb in Resources */,
 				BBFFF4081DE1083A00398350 /* Assets.xcassets in Resources */,
 				BB1BE5AB1DE443A800BB802F /* Credits.rtf in Resources */,
 				BB04C8351E04423B00FDF253 /* canviz2.html in Resources */,
@@ -236,6 +243,7 @@
 				BB2CE5631E005ECC00BE0C52 /* AppController.swift in Sources */,
 				BB8E068E1DE869290006BB1D /* IndexStrings.swift in Sources */,
 				BB2CE5611E003A6A00BE0C52 /* Formatter.swift in Sources */,
+				BB6528251E69730300B8FB95 /* Coverage.swift in Sources */,
 				BB04C83B1E062FB200FDF253 /* Common.swift in Sources */,
 				BBFFF4201DE10C6400398350 /* Utils.m in Sources */,
 				BB8E068F1DE869290006BB1D /* SourceKit.swift in Sources */,

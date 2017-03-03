@@ -126,8 +126,10 @@ class AppController: NSObject, AppGui, WebUIDelegate, WebFrameLoadDelegate, WebP
             }
             else {
                 let entities = project?.indexDB?.entitiesFor(filePath: target.file)
+                let coverage = project != nil ? Coverage(file: target.file, project: project!)?.covered : nil
                 html = formatter.htmlFor(path: target.file, data: sourceData, entities: entities,
-                               selecting: target, cascade: cascade, cleanPath: relative(target.file)).joined()
+                                         selecting: target, cascade: cascade, cleanPath: relative(target.file),
+                                         coverage: coverage).joined()
             }
 
             if sourceView.uiDelegate == nil {

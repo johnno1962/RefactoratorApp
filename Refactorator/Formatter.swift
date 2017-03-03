@@ -27,7 +27,7 @@ class Formatter {
     var maps = [String:(mtime: TimeInterval, resp: sourcekitd_response_t)]()
     let newline = CChar("\n".utf16.last!)
 
-    func htmlFor( path: String, data: NSData, entities: [Entity]? = nil, skew: Int = 0, selecting: Entity? = nil, cascade: Bool = true, shortform: Bool = false, cleanPath: String? = nil,
+    func htmlFor( path: String, data: NSData, entities: [Entity]? = nil, skew: Int = 0, selecting: Entity? = nil, cascade: Bool = true, shortform: Bool = false, cleanPath: String? = nil, coverage: Set<Int>? = nil,
                   linker: @escaping (_ text: String, _ entity: Entity?) -> String = {
         (_ text: String, _ entity: Entity?) -> String in
         return text
@@ -150,7 +150,11 @@ class Formatter {
         let lines = html.components(separatedBy: "\n").map {
             (line) -> String in
             lineno += 1
-            return String(format:"<span class=linenumber id=L\(lineno)>%04d&nbsp;</span>", lineno)+line+"\n"
+            var classes = "linenumber"
+            if coverage?.contains(lineno) == true {
+                classes += " covered"
+            }
+            return String(format:"<span class='\(classes)' id=L\(lineno)>%04d&nbsp;</span>", lineno)+line+"\n"
         }
         
         return lines

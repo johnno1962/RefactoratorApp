@@ -151,6 +151,12 @@ class Project: NSObject {
                 print("relevantDoc: \(sourceDoc.path!)")
                 let sourcePath = sourceDoc.path.url.resolvingSymlinksInPath().path
 
+//                if let onDisk = try? String(contentsOfFile: sourceDoc.path, encoding: .utf8),
+//                    sourceDoc.text != onDisk {
+//                    print(sourceDoc.text)
+//                    try? sourceDoc.text.write(toFile: sourceDoc.path, atomically: false, encoding: .utf8)
+//                }
+
                 do {
                     let sourceString = try NSString( contentsOfFile: sourcePath, encoding: String.Encoding.utf8.rawValue )
                     let range = sourceDoc.selectedCharacterRange
@@ -186,8 +192,7 @@ class Project: NSObject {
             }
         }
 
-        if indexDB == nil && Project.lastProject?.indexDB != nil {
-            let previous = Project.lastProject!
+        if indexDB == nil && Project.lastProject?.indexDB != nil, let previous = Project.lastProject {
             (workspacePath, projectRoot, derivedData, indexPath, indexDB) =
                 (previous.workspacePath, previous.projectRoot, previous.derivedData,
                  previous.indexPath, IndexDB(dbPath: previous.indexPath))
