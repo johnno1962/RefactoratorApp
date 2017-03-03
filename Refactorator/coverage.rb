@@ -15,7 +15,7 @@ Dir.chdir(objectdir)
 
 object = Dir.glob("**/#{classname}.o").first
 
-coverage = IO.popen("xcrun llvm-cov show -instr-profile '#{profdata}' '#{object}'").readlines.join("\n")
+coverage = `xcrun llvm-cov show -instr-profile '#{profdata}' '#{object}'`
 
 coverage.scan( /^\s+(\d+)\|\s+(\d+)\|/ ) do |covered, line|
     if covered != "0"
