@@ -1,5 +1,7 @@
 # Refactorator II, The App
 
+Due to chnages in the index databaase format in Xcode 10, this program no longer works properly.
+
 This is the source for the App version of the [Refactorator plugin](https://github.com/johnno1962/Refactorator)
 for refactoring Swift (well, renaming actually.)
 
